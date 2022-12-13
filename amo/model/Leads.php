@@ -20,13 +20,38 @@ use AmoCRM\Models\NoteModel;
 use AmoCRM\Models\NoteType\CommonNote;
 use AmoCRM\Models\TagModel;
 use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
+use Exception;
 
 class Leads extends MzpoAmo
 {
-
-	public function __construct()
+	private LeadModel $lead;
+	public function __construct($post, $id = null)
 	{
 		parent::__construct();
+
+		#region если нужно склеить со старой заявкой
+		if($id != null)
+		{
+			$this->lead = $this->apiClient->leads()->getOne($id);
+		}
+		#endregion
+
+		#region если нужно создать новый лид
+		else
+		{
+			$this->lead = $this->newLead($post);
+		}
+		#endregion
+
+	}
+
+	/**
+	 * Получение модели заявки
+	 * @return LeadModel
+	 */
+	public function getLead() : LeadModel
+	{
+		return $this->lead;
 	}
 
 	/**
@@ -52,10 +77,11 @@ class Leads extends MzpoAmo
 	 */
 	public function newLead(array $post) : LeadModel
 	{
+		$pipeline = $post['pipeline'] ?: PIPELINE;
 		#region создание модели лида
 		$lead = (new LeadModel())
 			->setName('Новая заявка с сайта '.$post['site'])
-			->setPipelineId(PIPELINE)
+			->setPipelineId($pipeline)
 			->setCustomFieldsValues(
 				(new CustomFieldsValuesCollection())
 					->add(
@@ -69,15 +95,19 @@ class Leads extends MzpoAmo
 									)
 							)
 					));
+		if($post['status'])
+		{
+			$lead->setStatusId($post['status']);
+		}
 		$lead->setCustomFieldsValues($this->customLeadFileds($post));
 		#endregion
 
 		#region установка тегов
 		if(!$post['tags'])
 		{
-			$matches = [];
-			preg_match_all('~([\w-]*)(\.[ru|com|education]+)~', $post['site'], $matches);
-			$post['tags'][0] = $matches[1][0];
+//			$matches = [];
+//			preg_match_all('~([\w-]*)(\.[ru|com|education]+)~', $post['site'], $matches);
+			$post['tags'][0] =$post['site'];
 		}
 		$tags = new TagsCollection();
 		foreach($post['tags'] as $tag)
@@ -179,13 +209,13 @@ class Leads extends MzpoAmo
 	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
 	 * @throws \AmoCRM\Exceptions\InvalidArgumentException
 	 */
-	public function newNote(string $message, LeadModel $lead) : NoteModel
+	public function newNote(string $message) : NoteModel
 	{
 		#region создание модели комментария
 		$leadNotesService = $this->apiClient->notes(EntityTypesInterface::LEADS);
 		$Note = new CommonNote();
 		$Note->setText($message)
-			->setEntityId($lead->getId());
+			->setEntityId($this->lead->getId());
 		#endregion
 
 		#region сохранение
@@ -199,32 +229,6 @@ class Leads extends MzpoAmo
 
 		return $note;
 	}
-
-	/**
-	 * Привязка контакта к заявке
-	 * @param ContactModel $contact
-	 * @param LeadModel $lead
-	 * @return bool
-	 */
-	public function linkContact(ContactModel $contact, LeadModel $lead) : bool
-	{
-		#region создание модели связи
-		$links = new LinksCollection();
-		$links->add($lead);
-		#endregion
-
-		#region сохранение
-		try {
-			$this->apiClient->contacts()->link($contact, $links);
-		} catch (AmoCRMApiException $e) {
-			printError($e);
-			die;
-		}
-		#endregion
-
-		return true;
-	}
-
 
 	/**
 	 * Заполнение кастомных полей заявки
@@ -260,45 +264,20 @@ class Leads extends MzpoAmo
 	public function findContact($array)
 	{
 		$filter = new ContactsFilter();
-		$collection = new CustomFieldsValuesCollection();
-		if($array['phone'])
-		{
-			$collection->add(
-				(new MultitextCustomFieldValuesModel())
-					->setFieldCode('PHONE')
-					->setValues(
-						(new MultitextCustomFieldValueCollection())
-							->add(
-								(new MultitextCustomFieldValueModel())
-									->setValue($array['phone'])
-							)
-					)
-			);
-		}
-		if($array['email'])
-		{
-			$collection->add(
-				(new MultitextCustomFieldValuesModel())
-					->setFieldCode('EMAIL')
-					->setValues(
-						(new MultitextCustomFieldValueCollection())
-							->add(
-								(new MultitextCustomFieldValueModel())
-									->setValue($array['email'])
-							)
-					)
-			);
-		}
-		$filter->setCustomFieldsValues($collection);
-
-//Получим сделки по фильтру
-		try {
+		$filter->setQuery($array['phone']);
+		try{
 			$contacts = $this->apiClient->contacts()->get($filter);
-		} catch (AmoCRMApiException $e) {
-			printError($e);
-			die;
+			return $contacts->first()->getId();
+		} catch (Exception $e)
+		{
+			$code = $e->getErrorCode();
+			if($code == 204){
+				return false;
+			}
+			else
+			{
+				return 'Error!';
+			}
 		}
-		dd($contacts);
-
 	}
 }
