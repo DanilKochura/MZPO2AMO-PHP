@@ -78,9 +78,11 @@ class Leads extends MzpoAmo
 	public function newLead(array $post) : LeadModel
 	{
 		$pipeline = $post['pipeline'] ?: PIPELINE;
+
 		#region создание модели лида
-		$lead = (new LeadModel())
-			->setName('Новая заявка с сайта '.$post['site'])
+		$lead = (new LeadModel());
+
+		$lead->setName('Новая заявка с сайта '.$post['site'])
 			->setPipelineId($pipeline)
 			->setCustomFieldsValues(
 				(new CustomFieldsValuesCollection())
@@ -95,6 +97,7 @@ class Leads extends MzpoAmo
 									)
 							)
 					));
+
 		if($post['status'])
 		{
 			$lead->setStatusId($post['status']);
@@ -131,74 +134,6 @@ class Leads extends MzpoAmo
 
 		return $lead;
 
-	}
-
-	/**
-	 * Добавление в АМО нового контакта с проверкой входных данных
-	 * @param $array
-	 * @return ContactModel
-	 * @throws \AmoCRM\Exceptions\AmoCRMApiException
-	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
-	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
-	 */
-	public function newContact(array $array) : ContactModel
-	{
-		#region создание модели контакта
-		$contact = new ContactModel();
-		if($array['name'])
-		{
-			$contact->setFirstName($array['name']);
-		}
-		if($array['surname'])
-		{
-			$contact->setLastName($array['surname']);
-		}
-		if($array['phone'] or $array['email'])
-		{
-			$fields = new CustomFieldsValuesCollection();
-			if($array['phone'])
-			{
-				$fields->add(
-					(new MultitextCustomFieldValuesModel())
-						->setFieldCode('PHONE')
-						->setValues(
-							(new MultitextCustomFieldValueCollection())
-								->add(
-									(new MultitextCustomFieldValueModel())
-										->setValue($array['phone'])
-								)
-						)
-				);
-			}
-			if($array['email'])
-			{
-				$fields->add(
-					(new MultitextCustomFieldValuesModel())
-						->setFieldCode('EMAIL')
-						->setValues(
-							(new MultitextCustomFieldValueCollection())
-								->add(
-									(new MultitextCustomFieldValueModel())
-										->setValue($array['email'])
-								)
-						)
-				);
-			}
-
-			$contact->setCustomFieldsValues($fields);
-		}
-		#endregion
-
-		#region сохранение
-		try {
-			$contact = $this->apiClient->contacts()->addOne($contact);
-		} catch (AmoCRMException $e)
-		{
-			die($e->getValidationErrors());
-		}
-		#endregion
-
-		return $contact;
 	}
 
 	/**
@@ -261,23 +196,22 @@ class Leads extends MzpoAmo
 
 	}
 
-	public function findContact($array)
+	/**
+	 * Получение значения поля заявки по id
+	 * @param $id
+	 * @return array|bool|int|object|string|null
+	 */
+	public function getCFValue($id)
 	{
-		$filter = new ContactsFilter();
-		$filter->setQuery($array['phone']);
-		try{
-			$contacts = $this->apiClient->contacts()->get($filter);
-			return $contacts->first()->getId();
-		} catch (Exception $e)
-		{
-			$code = $e->getErrorCode();
-			if($code == 204){
-				return false;
-			}
-			else
-			{
-				return 'Error!';
+		$customFields = $this->lead->getCustomFieldsValues();
+
+		//Получим значение поля по его ID
+		if (!empty($customFields)) {
+			$textField = $customFields->getBy('fieldId', $id);
+			if ($textField) {
+				return $textField->getValues()->first()->getValue();
 			}
 		}
+		return null;
 	}
 }
