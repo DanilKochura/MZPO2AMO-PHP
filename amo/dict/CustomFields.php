@@ -2,7 +2,7 @@
 
 namespace MzpoAmo;
 
-class CustomFields
+interface CustomFields
 {
 	public const SITE = 639081;
 	public const CITY = 639087;
@@ -17,4 +17,6 @@ class CustomFields
 	public const YM_UID = 715049;
 	public const ROISTAT_MARKER = 645583;
 	public const EVENT_NAME = 725709;
+	public const EVENT_DATETIME = 724347;
+	public const EVENT_ADRESS = 725711;
 }
