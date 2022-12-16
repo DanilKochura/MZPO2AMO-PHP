@@ -18,23 +18,42 @@ class Contact extends MzpoAmo
 {
 	private ContactModel $contact;
 	private bool $new = true;
-	private string $name;
-	private string $phone;
-	private string $email;
-	private string $surname;
+	public string $name;
+	public string $phone;
+	public string $email;
+	public string $surname;
 	private string $pipeline;
 	private ?int $mergeId = null;
 
-	public function __construct($array)
+	public function __construct($array, $id = null)
 	{
 			parent::__construct();
-			$this->phone = $array['phone'] ?: '';
-			$this->email = $array['email'] ?: '';
-			$this->name = $array['name'] ?: '';
-			$this->surname = $array['surname'] ?: '';
-			$this->pipeline = $array['pipeline'] ?: PIPELINE;
-			$this->contact = $this->findContact() ?: $this->createContact();
-			$this->mergeId = $this->checkLeads();
+			if(!$id)
+			{
+				$this->phone = $array['phone'] ?: '';
+				$this->email = $array['email'] ?: '';
+				$this->name = $array['name'] ?: '';
+				$this->surname = $array['surname'] ?: '';
+				$this->pipeline = $array['pipeline'] ?: PIPELINE;
+				$this->contact = $this->findContact() ?: $this->createContact();
+				$this->mergeId = $this->checkLeads();
+			} else
+			{
+				if(is_int($id))
+				{
+					$this->contact = $this->apiClient->contacts()->getOne($id);
+				} else
+				{
+					$this->contact = $id;
+				}
+				$this->name = $this->contact->getFirstName();
+				$this->surname = $this->contact->getLastName();
+				$fields = $this->contact->getCustomFieldsValues();
+				$this->phone = $fields->key('PHONE');
+				$this->email = $fields->key('EMAIL');
+
+			}
+
 	}
 
 	/**
