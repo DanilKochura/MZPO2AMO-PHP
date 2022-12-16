@@ -1,0 +1,129 @@
+<?php
+require '../model/MzpoAmo.php';
+require '../model/Leads.php';
+require '../model/Contact.php';
+require '../dict/CustomFields.php';
+require '../model/MzposApiEvent.php';
+require '../dict/Tags.php';
+require '../dict/Pipelines.php';
+require '../dict/Statuses.php';
+require '../model/Log.php';
+
+use AmoCRM\Exceptions\AmoCRMApiException;
+use Carbon\Carbon;
+use MzpoAmo\Contact;
+use MzpoAmo\CustomFields;
+use MzpoAmo\Leads;
+use MzpoAmo\Log;
+use MzpoAmo\MzposApiEvent;
+use MzpoAmo\Pipelines;
+use MzpoAmo\Statuses;
+use MzpoAmo\Tags;
+
+$request =  $_SERVER['REQUEST_URI'];
+$method = explode('?', $request)[1];
+#region обработка POST
+$id = $_POST['leads']['add'][0]['id'];
+$status = $_POST['leads']['add'][0]['status_id'];
+$pipeline = $_POST['leads']['add'][0]['pipeline_id'];
+#endregion
+if(!$id)
+{
+	die('Incorrect Lead Number');
+}
+if($method=='processevents')
+{
+	file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+
+	#region получение заявки
+	$lead = new Leads($_POST, $id);
+
+	$text = $lead->getCFValue(CustomFields::EVENT_NAME);
+	if(!$text)
+	{
+		die('Lead has no Event_name');
+	}
+	#endregion
+
+	#region получение данных о мероприятии и перераспределение заявок
+	$event = new MzposApiEvent($text);
+	$lead->setCFStringValue(CustomFields::EVENT_ADRESS, $event->adress);
+	$lead->setCFStringValue(CustomFields::EVENT_NAME, $event->page_name);
+	if(!strlen($lead->getCFValue(CustomFields::EVENT_DATETIME)))
+	{
+		$lead->setCFDateTimeValue(CustomFields::EVENT_DATETIME, Carbon::parse($event->datetime));
+	}
+
+	$type = $event->getType();
+	$properties = [
+		MzposApiEvent::DOD =>
+		[
+			'name' => 'dod',
+			'tags' => [Tags::DOD],
+			'pipeline' => Pipelines::FREE_EVENTS,
+			'status' => Statuses::SENT_NOTIFICATION_EVENTS_FREE
+		],
+		MzposApiEvent::MKV =>
+			[
+				'name' => "МКБ",
+				'tags' => [Tags::MKV],
+				'pipeline' => Pipelines::FREE_EVENTS,
+				'status' => Statuses::SENT_NOTIFICATION_EVENTS_FREE
+			],
+		MzposApiEvent::OPEN_LESSON =>
+			[
+				'name' => "Пробный урок",
+				'tags' => [Tags::OPEN_LESSON],
+				'pipeline' => Pipelines::OPEN_LESSON,
+				'status' => Statuses::SIGN_UP_OPEN_LESSON
+			],
+			MzposApiEvent::MORIZO =>
+			[
+				'name' => "Morizo",
+				'tags' => [Tags::MORIZO],
+				'pipeline' => Pipelines::FREE_EVENTS,
+				'status' => Statuses::SENT_NOTIFICATION_EVENTS_FREE
+			],
+		MzposApiEvent::STYX =>
+			[
+				'name' => "STYX",
+				'tags' => [Tags::STYX],
+				'pipeline' => Pipelines::FREE_EVENTS,
+				'status' => Statuses::SENT_NOTIFICATION_EVENTS_FREE
+			],
+	]; // поля в зависимости от типа мероприятия
+	if($type and $properties[$type])
+	{
+		$lead->setTags($properties[$type]['tags']);
+		$lead->setName($properties[$type]['name']);
+		$lead->setPipeline($properties[$type]['pipeline']);
+		$lead->setStatus($properties[$type]['status']);
+	}
+	#endregion
+	#region сохранение заявки
+	try {
+		$lead->save();
+	} catch (AmoCRMApiException $e) {
+//		file_put_contents(__DIR__.'/101.txt', print_r($lead-, 1), FILE_APPEND);
+		die(print_r($e->getValidationErrors()));
+		Log::writeError($e);
+	}
+	#endregion
+
+	#region запись в таблицу с отчетом
+	$contact = new Contact([],$lead->getContact());
+	$report = new EventsReport();
+	$report->add(['','','', $contact->name, $contact->email, $contact->phone, $lead->getCFValue(CustomFields::TYPE), '', '']);
+	#endregion
+
+}
+elseif ($method == 'deleteroms')
+{
+	$lead = new Leads($_POST, $id);
+	$lead->deleteTag(Tags::SEMINAR_ROMS);
+	$lead->save();
+	die('success');
+}elseif ($method == 'editcontact')
+{
+	file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+}
