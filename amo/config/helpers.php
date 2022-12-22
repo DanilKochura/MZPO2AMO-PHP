@@ -26,6 +26,9 @@ function saveToken($accessToken)
 		];
 
 		file_put_contents(TOKEN_FILE, json_encode($data));
+		file_put_contents(__DIR__.'/010.txt', json_encode($data));
+		$token = new TokenDb();
+		$token->saveToken($accessToken['accessToken'], $accessToken['refreshToken']);
 	} else {
 		exit('Invalid access token ' . var_export($accessToken, true));
 	}
