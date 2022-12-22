@@ -6,20 +6,28 @@ use AmoCRM\Filters\CatalogElementsFilter;
 use MzpoAmo\Course;
 use MzpoAmo\Log;
 use MzpoAmo\MzpoAmo;
-$secret_key = 'sdDF4sdfR';
+
+$secret_key = 'sdDF4sdfR';  //пароль для API
+$subdomain = 'mzpoeducationsale'; //Поддомен нужного аккаунта
+
 require '../../vendor/autoload.php';
 require '../model/MzpoAmo.php';
 require '../model/Course.php';
 require '../model/Log.php';
+
+#region псевдо-маршрутизация
 $request =  $_SERVER['REQUEST_URI'];
 $method = explode('?', $request)[1];
-$subdomain = 'mzpoeducationsale'; //Поддомен нужного аккаунта
-
+#endregion
+if(!$_POST)
+{
+	$_POST=json_decode(file_get_contents('php://input'), true);
+}
 #region удаление архивного курса
 //https://mzpo-s.ru/amo/api?delete_course
 if($method=='delete_course')
 {
-	Log::writeLine('Api', $method.' - '.$_POST['uid']);
+	Log::writeLine('Api', $method.' - '.$_POST['uid'].print_r($_POST,1));
 
 	#region обработка POST запроса
 	if($_POST['secret_key'] != $secret_key)
@@ -29,7 +37,7 @@ if($method=='delete_course')
 	}
 	if(!$uid = $_POST['uid'])
 	{
-		http_response_code(405);
+		http_response_code(404);
 		die('Incorrect course uid');
 	}
 	#endregion
@@ -48,7 +56,7 @@ if($method=='delete_course')
 	try {
 		$courses = $courseBase->getCourses($uid); // получение коллекции курсов
 	} catch (AmoCRMApiException $e) {
-		http_response_code(405);
+		http_response_code(404);
 		die('Course not found');
 	}
 
