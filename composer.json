@@ -1,5 +1,9 @@
 {
     "require": {
-        "amocrm/amocrm-api-library": "^0.12.3"
+        "amocrm/amocrm-api-library": "^0.12.3",
+        "mk-j/php_xlsxwriter": "^0.38.0",
+        "php-amqplib/php-amqplib": "^3.4",
+      "ext-curl": "*",
+        "ext-json": "*"
     }
 }
