@@ -19,4 +19,5 @@ interface CustomFields
 	public const EVENT_NAME = 725709;
 	public const EVENT_DATETIME = 724347;
 	public const EVENT_ADRESS = 725711;
+	public const ANALYTIC_ID = 643439;
 }
