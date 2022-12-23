@@ -3,31 +3,57 @@
 namespace MzpoAmo;
 
 use AmoCRM\Collections\CatalogElementsCollection;
+use AmoCRM\Collections\CustomFieldsValuesCollection;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Filters\CatalogElementsFilter;
 use AmoCRM\Models\CatalogElementModel;
+use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
+use AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection;
+use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
 
 class Course extends MzpoAmo
 {
+	private CatalogElementModel $course;
 	private const CATALOG = 12463;
-	public function __construct()
+	public function __construct(CatalogElementModel $course)
 	{
 		parent::__construct();
-	}
-	public function getCFvalue(CatalogElementModel $course)
-	{
-		return $course->getCustomFieldsValues()->getBy('fieldId', 710407)->getValues()->first()->getValue();
-	}
 
-	public function getCourses($uid)
-	{
-		$catalog = $this->apiClient->catalogs()->getOne(12463);
-		$catalogElementsService = $this->apiClient->catalogElements($catalog->getId());
-		$catalogElementsFilter = new CatalogElementsFilter();
-		$catalogElementsFilter->setQuery($uid);
-		$catalogElementsCollection = new CatalogElementsCollection();
-		$catalogElementsCollection = $catalogElementsService->get($catalogElementsFilter)->all();
-		return $catalogElementsCollection;
+		$this->course = $course;
 
 	}
+
+	public function setCfValue($id, $value): bool
+	{
+			$cfvs = $this->course->getCustomFieldsValues();
+			if(!$cfvs)
+			{
+				$cfvs = new CustomFieldsValuesCollection();
+			}
+			$cfvs
+				->add(
+					(new TextCustomFieldValuesModel())
+						->setFieldId($id)
+						->setValues(
+							(new TextCustomFieldValueCollection())
+								->add(
+									(new TextCustomFieldValueModel())
+										->setValue($value)
+								)
+						)
+				);
+			$this->course->setCustomFieldsValues($cfvs);
+			return true;
+	}
+
+	public function setName($name)
+	{
+		$this->course->setName($name);
+	}
+
+	public function save(): ?int
+	{
+		return $this->apiClient->catalogElements($this::CATALOG)->updateOne($this->course)->getId();
+	}
+
 }

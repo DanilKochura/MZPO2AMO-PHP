@@ -20,4 +20,16 @@ interface CustomFields
 	public const EVENT_DATETIME = 724347;
 	public const EVENT_ADRESS = 725711;
 	public const ANALYTIC_ID = 643439;
+
+	public const SKU = 647993;
+
+	public const DURATION = 715507;
+
+	public const PRICE = 647997;
+
+	public const STUDY_FORM = 715509;
+
+	public const COURSE_DESCR = 647995;
+
+	public const COURSE_UID_1c = 710407;
 }
