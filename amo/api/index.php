@@ -118,6 +118,7 @@ elseif($method == 'update_course')
 		$price = $prices['9e633e6d-3d2d-11eb-86e1-82172a65f31e'];
 	}
 	$comment = $_POST['supplementary_info'] ?: '';
+	$entity = '0000000';
 	foreach ($_POST['amo_ids'] as $amo_id)
 	{
 		if($amo_id['account_id'] == 28395871)
@@ -160,11 +161,14 @@ elseif($method == 'update_course')
 	} catch(\AmoCRM\Exceptions\AmoCRMApiErrorResponseException $e)
 	{
 		http_response_code(500);
-		die($e->getValidationErrors());
+		Log::writeError('Api', $e->getValidationErrors());
+		dd('Error!');
 	}
-	echo $courseAmo->save();
+	http_response_code(200);
+	echo json_encode(['amo_ids'=>[['account_id'=> 28395871, 'entity_id'=>$courseAmo->save()]]]);
 
 }
 
 
 #endregion
+
