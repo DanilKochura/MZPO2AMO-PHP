@@ -1,6 +1,8 @@
 <?php
 require '../model/MzpoAmo.php';
 require '../model/Leads.php';
+require '../reports/ReportBase.php';
+require '../reports/EventsReport.php';
 require '../model/Contact.php';
 require '../dict/CustomFields.php';
 require '../model/MzposApiEvent.php';
@@ -19,21 +21,25 @@ use MzpoAmo\MzposApiEvent;
 use MzpoAmo\Pipelines;
 use MzpoAmo\Statuses;
 use MzpoAmo\Tags;
+use reports\EventsReport;
 
 $request =  $_SERVER['REQUEST_URI'];
 $method = explode('?', $request)[1];
 #region обработка POST
-$id = $_POST['leads']['add'][0]['id'];
-$status = $_POST['leads']['add'][0]['status_id'];
-$pipeline = $_POST['leads']['add'][0]['pipeline_id'];
-#endregion
-if(!$id)
-{
-	die('Incorrect Lead Number');
-}
+
+file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+
+#region инициализация мероприятий
 if($method=='processevents')
 {
-	file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+	$id = $_POST['leads']['add'][0]['id'];
+	$status = $_POST['leads']['add'][0]['status_id'];
+	$pipeline = $_POST['leads']['add'][0]['pipeline_id'];
+#endregion
+	if(!$id)
+	{
+		die('Incorrect Lead Number');
+	}
 
 	#region получение заявки
 	$lead = new Leads($_POST, $id);
@@ -55,6 +61,7 @@ if($method=='processevents')
 	}
 
 	$type = $event->getType();
+
 	$properties = [
 		MzposApiEvent::DOD =>
 		[
@@ -98,14 +105,15 @@ if($method=='processevents')
 		$lead->setName($properties[$type]['name']);
 		$lead->setPipeline($properties[$type]['pipeline']);
 		$lead->setStatus($properties[$type]['status']);
+	} else{
+		die('No eventt');
 	}
+	$lead->newSystemMessage('Worked!');
 	#endregion
 	#region сохранение заявки
 	try {
 		$lead->save();
 	} catch (AmoCRMApiException $e) {
-//		file_put_contents(__DIR__.'/101.txt', print_r($lead-, 1), FILE_APPEND);
-		die(print_r($e->getValidationErrors()));
 		Log::writeError($e);
 	}
 	#endregion
@@ -113,17 +121,40 @@ if($method=='processevents')
 	#region запись в таблицу с отчетом
 	$contact = new Contact([],$lead->getContact());
 	$report = new EventsReport();
-	$report->add(['','','', $contact->name, $contact->email, $contact->phone, $lead->getCFValue(CustomFields::TYPE), '', '']);
+	$report->add(['','','', $contact->name, $contact->email, $contact->phone, $lead->getCFValue(CustomFields::TYPE), '', '', '']);
 	#endregion
 
 }
+#endregion
 elseif ($method == 'deleteroms')
 {
+	$id = $_POST['leads']['add'][0]['id'];
+	$status = $_POST['leads']['add'][0]['status_id'];
+	$pipeline = $_POST['leads']['add'][0]['pipeline_id'];
+#endregion
+	if(!$id)
+	{
+		die('Incorrect Lead Number');
+	}
+	file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+
 	$lead = new Leads($_POST, $id);
 	$lead->deleteTag(Tags::SEMINAR_ROMS);
 	$lead->save();
 	die('success');
 }elseif ($method == 'editcontact')
 {
-	file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+	$id = $_POST['contacts']['add'][0]['id'] ?: $_POST['contacts']['update'][0]['id'];
+	$contact = new \MzpoAmo\Contact([], $id);
+	$tel = $contact->getPhone();
+	if($tel)
+	{
+		$tel = ltrim($tel, '8');
+		$tel = ltrim($tel, '7');
+		$tel = ltrim($tel, '+7');
+		$tel = '+7'.$tel;
+	}
+	$contact->setPhone($tel);
+	$contact->save();
+
 }

@@ -8,8 +8,11 @@ use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Filters\ContactsFilter;
 use AmoCRM\Models\ContactModel;
 use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
+use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\MultitextCustomFieldValueCollection;
+use AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\MultitextCustomFieldValueModel;
+use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
 use AmoCRM\Models\LeadModel;
 use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
 use Exception;
@@ -30,7 +33,7 @@ class Contact extends MzpoAmo
 			parent::__construct();
 			if(!$id)
 			{
-				$this->phone = strlen($array['phone'])>2 ?: '';
+				$this->phone = $array['phone'] ?: '';
 				$this->email = $array['email'] ?: '';
 				$this->name = $array['name'] ?: '';
 				$this->surname = $array['surname'] ?: '';
@@ -39,7 +42,7 @@ class Contact extends MzpoAmo
 				$this->mergeId = $this->checkLeads();
 			} else
 			{
-				if(is_int($id))
+				if(is_int($id) or is_string($id))
 				{
 					$this->contact = $this->apiClient->contacts()->getOne($id);
 				} else
@@ -50,8 +53,28 @@ class Contact extends MzpoAmo
 				$this->name = $this->contact->getName();
 				$this->surname = $this->contact->getLastName();
 				$fields = $this->contact->getCustomFieldsValues();
-				$this->phone = $fields->getBy('fieldCode','PHONE')->getValues()->first()->getValue();
-				$this->email = $fields->getBy('fieldCode','EMAIL')->getValues()->first()->getValue();
+				try {
+					$phoneField = $fields->getBy('fieldCode','PHONE');
+					if(!$phoneField)
+					{
+						throw new Exception();
+					}
+					$this->phone = $phoneField->getValues()->first()->getValue();
+				} catch (Exception $e)
+				{
+					$this->phone = '';
+				}
+				try {
+					$emailField = $fields->getBy('fieldCode','EMAIL');
+					if(!$emailField)
+					{
+						throw new Exception();
+					}
+					$this->email = $emailField->getValues()->first()->getValue();
+				} catch (Exception $e)
+				{
+					$this->email = '';
+				}
 
 			}
 
@@ -261,5 +284,69 @@ class Contact extends MzpoAmo
 			}
 			return null;
 		}
+	}
+
+	/**
+	 * Получение телефона из карточки
+	 * @return array|bool|int|object|string|null
+	 */
+	public function getPhone()
+	{
+		try {
+			$phoneField = $this->contact->getCustomFieldsValues();
+			if(!$phoneField)
+			{
+				throw new Exception();
+			}
+			if(!$phoneField->getBy('fieldCode','PHONE'))
+			{
+				throw new Exception();
+			}
+			return $this->contact->getCustomFieldsValues()->getBy('fieldCode', 'PHONE')->getValues()->first()->getValue();
+		} catch (Exception $e)
+		{
+			return null;
+		}
+	}
+
+	/**
+	 * Установка телефона
+	 * @param $phone
+	 * @return bool
+	 */
+	public function setPhone($phone): bool
+	{
+		try {
+			$cfvs = $this->contact->getCustomFieldsValues();
+			if($cfvs)
+			{
+				$cfvs->removeBy('fieldCode', 'PHONE');
+			} else
+			{
+				$cfvs = new CustomFieldsValuesCollection();
+			}
+			$cfvs
+				->add(
+					(new TextCustomFieldValuesModel())
+						->setFieldCode('PHONE')
+						->setValues(
+							(new TextCustomFieldValueCollection())
+								->add(
+									(new TextCustomFieldValueModel())
+										->setValue($phone)
+								)
+						)
+				);
+			$this->contact->setCustomFieldsValues($cfvs);
+			return true;
+		}catch (AmoCRMApiException $e)
+		{
+			return false;
+		}
+	}
+
+	public function save()
+	{
+		$this->apiClient->contacts()->updateOne($this->contact);
 	}
 }
