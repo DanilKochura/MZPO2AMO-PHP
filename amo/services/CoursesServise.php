@@ -98,7 +98,7 @@ class CoursesServise extends MzpoAmo
 		$i = 0;
 		//Лимит на получение товаров из amo - 50 штук на один запрос, для этого нужен цикл. Некоторые курсы дублировались и хранятся по 200+ экземпляров.
 		while(1) {
-			if(count($courses) == 1)
+			if($courses->count() == 1)
 			{
 				Log::writeLine('Api', $method.' - '.'Deleted: '.$i);
 				http_response_code(200);
