@@ -345,6 +345,13 @@ class Contact extends MzpoAmo
 		}
 	}
 
+	/**
+	 * Сохранение контакта
+	 * @return void
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 */
 	public function save()
 	{
 		$this->apiClient->contacts()->updateOne($this->contact);

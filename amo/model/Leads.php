@@ -402,6 +402,12 @@ class Leads extends MzpoAmo
 
 	}
 
+
+	/**
+	 * Добавление системного сообщения к заявке
+	 * @param $text
+	 * @return void
+	 */
 	public function newSystemMessage($text)
 	{
 		$notesCollection = new NotesCollection();

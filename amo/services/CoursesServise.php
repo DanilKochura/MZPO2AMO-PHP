@@ -18,18 +18,13 @@ class CoursesServise extends MzpoAmo
 	{
 		parent::__construct();
 	}
-	public function getCourses($uid)
-	{
-		$catalog = $this->apiClient->catalogs()->getOne(12463);
-		$catalogElementsService = $this->apiClient->catalogElements($catalog->getId());
-		$catalogElementsFilter = new CatalogElementsFilter();
-		$catalogElementsFilter->setQuery($uid);
-		$catalogElementsCollection = new CatalogElementsCollection();
-		$catalogElementsCollection = $catalogElementsService->get($catalogElementsFilter)->all();
-		return $catalogElementsCollection;
 
-	}
-
+	/**
+	 * Удаление всех сущностей курса по uid
+	 * @param $uid
+	 * @param $method
+	 * @return void
+	 */
 	public function deleteCourses($uid, $method)
 	{
 		$access_Token = getToken();
@@ -77,6 +72,11 @@ class CoursesServise extends MzpoAmo
 		}
 	}
 
+	/** Удаление дублей курса
+	 * @param $uid
+	 * @param $method
+	 * @return void
+	 */
 	public function deleteDoubles($uid, $method)
 	{
 		#region обновление токена
@@ -137,6 +137,16 @@ class CoursesServise extends MzpoAmo
 		#endregion
 	}
 
+
+	/**
+	 * Получение курса по uid
+	 * @param $uid
+	 * @return CatalogElementsCollection|null
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 * @throws \AmoCRM\Exceptions\InvalidArgumentException
+	 */
 	public function getCoursesByUid($uid): ?CatalogElementsCollection
 	{
 		$catalog = $this->apiClient->catalogs()->getOne($this::CATALOG);
@@ -145,6 +155,16 @@ class CoursesServise extends MzpoAmo
 		$catalogElementsFilter->setQuery($uid);
 		return $catalogElementsService->get($catalogElementsFilter);
 	}
+
+	/**
+	 * Получение курса по id сущности
+	 * @param $id
+	 * @return CatalogElementModel|null
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 * @throws \AmoCRM\Exceptions\InvalidArgumentException
+	 */
 	public function getCourse($id): ?CatalogElementModel
 	{
 		$catalog = $this->apiClient->catalogs()->getOne(12463);
@@ -152,6 +172,15 @@ class CoursesServise extends MzpoAmo
 		return $catalogElementsService->getOne($id);
 	}
 
+	/**
+	 * Создание пустого курса  с названием
+	 * @param $name
+	 * @return CatalogElementModel
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 * @throws \AmoCRM\Exceptions\InvalidArgumentException
+	 */
 	public function createCourse($name)
 	{
 		$course = new CatalogElementModel();
