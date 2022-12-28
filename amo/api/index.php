@@ -1,13 +1,8 @@
 <?php
 
-use AmoCRM\Client\AmoCRMApiClient;
-use AmoCRM\Collections\CatalogElementsCollection;
-use AmoCRM\Exceptions\AmoCRMApiException;
-use AmoCRM\Filters\CatalogElementsFilter;
 use MzpoAmo\Course;
 use MzpoAmo\CustomFields;
 use MzpoAmo\Log;
-use MzpoAmo\MzpoAmo;
 use services\CoursesServise;
 
 $secret_key = 'sdDF4sdfR';  //пароль для API
@@ -24,6 +19,7 @@ require '../services/CoursesServise.php';
 $request =  $_SERVER['REQUEST_URI'];
 $method = explode('?', $request)[1];
 #endregion
+
 if(!$_POST)
 {
 	$_POST=json_decode(file_get_contents('php://input'), true);
@@ -92,15 +88,17 @@ elseif($method == 'update_course')
 		http_response_code(404);
 		die('Incorrect course uid');
 	}
-	$name = $_POST['name'];
-	$prefix = $_POST['short_name'] ?: '';
-	$hours = $_POST['duration'] ?: '';
-	$form = $_POST['format'] ?: '';
-	$comment = $_POST['supplementary_info'] ?: '';
+	$name = $_POST['name'];  //название
+	$prefix = $_POST['short_name'] ?: ''; //префикс
+	$hours = $_POST['duration'] ?: '';  //часы
+	$form = $_POST['format'] ?: '';  //форма обучения
+	$comment = $_POST['supplementary_info'] ?: ''; //примечания
 	$prices = [];
+
+	#region Цены
 	foreach ($_POST['ItemPrices'] as $price)
 	{
-		$prices[$price['UID']] = $price['Price'];
+		$prices[$price['UID']] = $price['Price']; //
 	}
 	if(strpos($prefix, '-Д'))
 	{
@@ -111,11 +109,18 @@ elseif($method == 'update_course')
 	}else
 	{
 		$price = $prices['5bba5dc4-580c-11eb-86f0-82172a65f31e'];
-		$name.='('.$prefix.')';
 	}
+
 	if(!$price)
 	{
 		$price = $prices['9e633e6d-3d2d-11eb-86e1-82172a65f31e'];
+	}
+	unset($prices); //чистим памятьэ
+	#endregion
+
+	if(strpos($prefix, '-') !== false)
+	{
+		$name.='('.$prefix.')';
 	}
 	$comment = $_POST['supplementary_info'] ?: '';
 	$entity = '0000000';
@@ -132,21 +137,21 @@ elseif($method == 'update_course')
 	
 	$courseBase = new CoursesServise();
 	try{
-		$course = $courseBase->getCourse($entity);
+		$course = $courseBase->getCourse($entity);  //пытаемся найти курс по id
 	} catch (Exception $e)
 	{
 		try {
-			$course = $courseBase->getCoursesByUid($uid);
+			$course = $courseBase->getCoursesByUid($uid);  //пытаемся найти курс по id_1c
 			if($course->count() > 1)
 			{
-				$courseBase->deleteDoubles($uid, $method);
+				$courseBase->deleteDoubles($uid, $method); //если нашли, то проверим и почистим дубли
 			}
 			$course = $courseBase->getCoursesByUid($uid)->first();
 		}
 		catch (Exception $e)
 		{
 			Log::writeLine('Api', 'Курс '.$prefix.' не найден. Создаю новый.');
-			$course = $courseBase->createCourse($name);
+			$course = $courseBase->createCourse($name);  //если не нашли, то создаем новый
 		}
 	}
 	$courseAmo = new Course($course);
@@ -168,7 +173,5 @@ elseif($method == 'update_course')
 	echo json_encode(['amo_ids'=>[['account_id'=> 28395871, 'entity_id'=>$courseAmo->save()]]]);
 
 }
-
-
 #endregion
 

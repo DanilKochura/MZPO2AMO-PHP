@@ -3,9 +3,9 @@
 class DB
 {
 	private string $host='localhost';
-	private string $user='mzpo_s_ru_usr';
-	private string $db='u60844_seminars';
-	private string $pw='yZAMhtU9CnGbeDDg';
+	private string $user='root';
+	private string $db='db';
+	private string $pw='pass';
 	protected $conn;
 	public function __construct()
 	{
@@ -22,10 +22,15 @@ class TokenDb extends DB
 	{
 		parent::__construct();
 	}
-	public function saveToken($access, $refresh, $time, $time2)
+	public function saveToken($access, $refresh)
 	{
-		$this->conn->query("UPDATE '$this->table' set isp = 0");
-		$this->conn->query("INSERT INTO '$this->table'(access, refresh, access_expires, refresh_expires, isp) values('$access', '$refresh', '$time', '$time2', 1)");
+		$this->conn->query("UPDATE amo set isp = 0");
+		$this->conn->query("INSERT INTO amo(access, refresh, isp) values('$access', '$refresh', 1)");
+	}
+
+	public function __destruct()
+	{
+		$this->conn->close();
 	}
 }
 

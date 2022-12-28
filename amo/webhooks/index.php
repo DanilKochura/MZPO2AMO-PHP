@@ -27,7 +27,6 @@ $request =  $_SERVER['REQUEST_URI'];
 $method = explode('?', $request)[1];
 #region обработка POST
 
-file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
 
 #region инициализация мероприятий
 if($method=='processevents')
@@ -142,19 +141,24 @@ elseif ($method == 'deleteroms')
 	$lead->deleteTag(Tags::SEMINAR_ROMS);
 	$lead->save();
 	die('success');
-}elseif ($method == 'editcontact')
+}
+#region автозамена номера телефона
+elseif ($method == 'editcontact')
 {
 	$id = $_POST['contacts']['add'][0]['id'] ?: $_POST['contacts']['update'][0]['id'];
 	$contact = new \MzpoAmo\Contact([], $id);
 	$tel = $contact->getPhone();
-	if($tel)
+	if($tel and ($tel[0] == 8 or $tel[0] == 7))
 	{
 		$tel = ltrim($tel, '8');
 		$tel = ltrim($tel, '7');
-		$tel = ltrim($tel, '+7');
 		$tel = '+7'.$tel;
+	} else
+	{
+		die();
 	}
 	$contact->setPhone($tel);
 	$contact->save();
 
 }
+#endregion
