@@ -26,6 +26,8 @@ require_once  $_SERVER['DOCUMENT_ROOT'].'/amo/config/helpers.php';
 
 class MzpoAmo
 {
+	public const  ADMINISTRATOR = 2576764;
+	public const  DANIL = 8348113;
  	protected const SUBDOMAIN = 'mzpoeducationsale'; //Поддомен нужного аккаунта
 	protected const SECRET = 'KAHuESf38NuVHQ6TxpzaN5eWnbe8TutYO5eo9olYoXAe7xUoYXlHwuYlh4WnFg3R';
 	protected const ID = 'a4fbd30b-b5ae-4ebd-91b1-427f58f0d709';

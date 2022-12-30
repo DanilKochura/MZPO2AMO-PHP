@@ -22,10 +22,22 @@ class TokenDb extends DB
 	{
 		parent::__construct();
 	}
-	public function saveToken($access, $refresh)
+	public function saveToken($access, $refresh, $expires, $domain)
 	{
 		$this->conn->query("UPDATE amo set isp = 0");
-		$this->conn->query("INSERT INTO amo(access, refresh, isp) values('$access', '$refresh', 1)");
+		$this->conn->query("INSERT INTO amo(`access`, `refresh`, `expires`, `domain`,  `isp`) values('$access', '$refresh', '$expires', '$domain', 1)");
+	}
+
+	public function getToken()
+	{
+		$res = $this->conn->query("SELECT * from amo where isp = 1 limit 1");
+		$resp = $res->fetch_assoc();
+		return  [
+			'accessToken' => $resp['access'],
+			'expires' => $resp['expires'],
+			'refreshToken' => $resp['refresh'],
+			'baseDomain' => $resp['domain'],
+		];
 	}
 
 	public function __destruct()
@@ -33,7 +45,6 @@ class TokenDb extends DB
 		$this->conn->close();
 	}
 }
-
 
 const TYPE = 639075;
 const COURSE = 357005;

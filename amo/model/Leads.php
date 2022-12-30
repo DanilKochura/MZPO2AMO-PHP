@@ -430,5 +430,21 @@ class Leads extends MzpoAmo
 		}
 	}
 
+	/** Установка ответственного для заявки
+	 * @param $id
+	 * @return void
+	 */
+	public function setResponsibleUser($id)
+	{
+		$this->lead->setResponsibleUserId($id);
+	}
 
+	/**
+	 * Получение ответственного для заявки
+	 * @return int|null
+	 */
+	public function getResponsible(): ?int
+	{
+		return $this->lead->getResponsibleUserId();
+	}
 }
