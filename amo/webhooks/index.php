@@ -1,17 +1,7 @@
 <?php
-require '../model/MzpoAmo.php';
-require '../model/Leads.php';
-require '../reports/ReportBase.php';
-require '../reports/EventsReport.php';
-require '../model/Contact.php';
-require '../dict/CustomFields.php';
-require '../model/MzposApiEvent.php';
-require '../dict/Tags.php';
-require '../dict/Pipelines.php';
-require '../dict/Statuses.php';
-require '../model/Log.php';
-require '../services/QueueService.php';
 
+require '../services/QueueService.php';
+require '../../vendor/autoload.php';
 use AmoCRM\Exceptions\AmoCRMApiException;
 use Carbon\Carbon;
 use MzpoAmo\Contact;

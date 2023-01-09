@@ -5,6 +5,7 @@ use MzpoAmo\Leads;
 use MzpoAmo\Log;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use reports\LeadsReport;
 use services\QueueService;
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/model/MzpoAmo.php';
@@ -16,6 +17,8 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Pipelines.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Tags.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Statuses.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/services/QueueService.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/reports/BaseReport.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/reports/LeadsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
 
@@ -47,6 +50,9 @@ try {
 			{
 				echo 'ok';
 			}
+			$report = new LeadsReport();
+			$report->add([$post['site'], date('Y-m-d H:i:s'), json_encode($post), $base->getLead()->getId(), $contact->getContact()->getId()]);
+
 		} catch (Exception $e)
 		{
 			http_response_code(400);
