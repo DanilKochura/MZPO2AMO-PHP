@@ -29,7 +29,6 @@ try {
 	$channel->queue_declare(QueueService::LEADS, false, true, false, false);
 
 	$callback = function ($msg){
-		file_put_contents(__DIR__.'/log.txt', date('Y-m-d H:i:s').' : '.print_r($msg->body, 1).PHP_EOL, FILE_APPEND);
 
 		try{
 			$post = json_decode($msg->body, true);

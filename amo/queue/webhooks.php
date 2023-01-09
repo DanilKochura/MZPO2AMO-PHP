@@ -30,24 +30,28 @@ require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/EventsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
 try {
+	#region создание соединения и слушателя очереди
 	$connection = new AMQPStreamConnection(QueueService::HOST, QueueService::PORT, QueueService::USER, QueueService::PASSWORD, QueueService::VHOST);
 
 	$channel = $connection->channel();
 	$channel->queue_declare(QueueService::WEBHOOKS, false, true, false, false);
+	#endregion
 
+	#region главный callback-бработчик
 	$callback = function ($msg){
-		file_put_contents(__DIR__.'/log2.txt', date('Y-m-d H:i:s').' : '.QueueService::WEBHOOKS.' '.print_r($msg->body, 1).PHP_EOL, FILE_APPEND);
 		$post = json_decode($msg->body, true);
 		$method = $post['method'];
-#region инициализация мероприятий
+
+		#region Инициализация мероприятий
 		if ($method == 'processevents') {
+			#region обработка запроса
 			$id = $post['leads']['add'][0]['id'];
 			$status = $post['leads']['add'][0]['status_id'];
 			$pipeline = $post['leads']['add'][0]['pipeline_id'];
-			#endregion
 			if (!$id) {
 				Log::writeError(Log::WEBHOOKS, new Exception('No id!'));
 			}
+			#endregion
 
 			#region получение заявки
 			$lead = new Leads([], $id);
@@ -133,44 +137,53 @@ try {
 			$report = new EventsReport();
 			$report->add(['', '', '', $contact->name, $contact->email, $contact->phone, $lead->getCFValue(CustomFields::TYPE), '', '', $event->alias, date('Y-m-d H:i:s', strtotime($event->datetime)), $contact->getContact()->getId(), $lead->getLead()->getId()]);
 			#endregion
-			}
-			#endregion
-			elseif ($method == 'deleteroms') {
+
+		}
+		#endregion
+
+		#region Удаление тега "Семинар РОМС" - костыль на время
+		elseif ($method == 'deleteroms') {
+			#region обработка запроса
 			$id = $post['leads']['add'][0]['id'];
 			$status = $post['leads']['add'][0]['status_id'];
 			$pipeline = $post['leads']['add'][0]['pipeline_id'];
-			#endregion
 			if (!$id) {
 				die('Incorrect Lead Number');
 			}
-			file_put_contents(__DIR__ . '/0.txt', print_r($post, 1), FILE_APPEND);
+			#endregion
+
 
 			$lead = new Leads($post, $id);
 			$lead->deleteTag(Tags::SEMINAR_ROMS);
 			$lead->save();
-			}
-	#region автозамена номера телефона
-	elseif ($method == 'editcontact')
-	{
-		$id = $post['contacts']['add'][0]['id'] ?: $post['contacts']['update'][0]['id'];
-		$contact = new \MzpoAmo\Contact([], $id);
-		$tel = $contact->getPhone();
-		if ($tel)
-			if ($tel and ($tel[0] == 8 or $tel[0] == 7)) {
-				$tel = ltrim($tel, '8');
-				$tel = ltrim($tel, '7');
-				$tel = ltrim($tel, '+7');
-				$tel = '+7' . $tel;
-			} else {
-				die();
-			}
+		}
+		#endregion
+
+		#region автозамена номера телефона
+		elseif ($method == 'editcontact')
+		{
+			$id = $post['contacts']['add'][0]['id'] ?: $post['contacts']['update'][0]['id'];
+			$contact = new \MzpoAmo\Contact([], $id);
+			$tel = $contact->getPhone();
+			if ($tel)
+				if ($tel and ($tel[0] == 8 or $tel[0] == 7)) {
+					$tel = ltrim($tel, '8');
+					$tel = ltrim($tel, '7');
+					$tel = ltrim($tel, '+7');
+					$tel = '+7' . $tel;
+				} else {
+					die();
+				}
 		$contact->setPhone($tel);
 		$contact->save();
 
 	}
 	#endregion
+
 		$msg->ack();
 	};
+	#endregion
+
 	$channel->basic_consume(QueueService::WEBHOOKS, '', false, false, false, false, $callback);
 
 	while($channel->is_open())
