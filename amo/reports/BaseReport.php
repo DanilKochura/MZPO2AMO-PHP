@@ -3,7 +3,7 @@
 namespace reports;
 use DB;
 
-abstract class ReportBase extends DB
+abstract class BaseReport extends DB
 {
 	protected string $table;
 	protected array $fields;
