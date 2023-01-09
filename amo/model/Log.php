@@ -7,6 +7,7 @@ class Log
 	public const CONTACT = 'contact/';
 	public const LEAD = 'lead/';
 	public const POST = 'common/';
+	public const WEBHOOKS = 'webhooks/';
 
 	public const COURSE = 'course/';
 
