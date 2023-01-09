@@ -12,6 +12,7 @@ class MzposApiEvent
 	public string $page_name; //название мероприятия
 	public string $datetime; //дата  и время мероприятия
 	public string $adress; //адрес проведения
+	public string $alias; //ссылка
 
 
 	public const DOD = 6;
@@ -43,6 +44,7 @@ class MzposApiEvent
 			$this->adress = $resp->event_address;
 			$this->datetime = $resp->vrema;
 			$this->page_name = $resp->page_name;
+			$this->alias = $resp->page_alias;
 		}
 		else
 		{
