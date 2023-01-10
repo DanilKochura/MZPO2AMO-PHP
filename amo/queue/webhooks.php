@@ -29,6 +29,7 @@ require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/BaseReport.php';
 require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/EventsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
+
 try {
 	#region создание соединения и слушателя очереди
 	$connection = new AMQPStreamConnection(QueueService::HOST, QueueService::PORT, QueueService::USER, QueueService::PASSWORD, QueueService::VHOST);
@@ -40,7 +41,9 @@ try {
 	#region главный callback-бработчик
 	$callback = function ($msg){
 		$post = json_decode($msg->body, true);
+
 		$method = $post['method'];
+		Log::writeLine(Log::WEBHOOKS, $method);
 
 		#region Инициализация мероприятий
 		if ($method == 'processevents') {
