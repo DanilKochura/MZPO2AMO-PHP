@@ -23,7 +23,7 @@ if($_POST['method'] == 'siteform')
 {
 	$_POST['site'] = ltrim($_POST['site'], 'www.');
 
-	$_POST['pipeline'] = PIPELINE; ///
+//	$_POST['pipeline'] = PIPELINE; ///
 	///
 	$queueService = new QueueService();
 	$queueService->addToQueue(QueueService::LEADS, json_encode($_POST));

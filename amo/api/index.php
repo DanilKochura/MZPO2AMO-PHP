@@ -22,9 +22,10 @@ $method = explode('?', $request)[1];
 
 if(!$_POST)
 {
+	file_put_contents(__DIR__.'/0.txt', file_get_contents('php://input'), FILE_APPEND);
 	$_POST=json_decode(file_get_contents('php://input'), true);
 }
-Log::writeLine('Api', $method.' - '.$_POST['uid'].print_r($_POST,1));
+Log::writeLine('Api', $method.' - '.$_POST['short_name']);
 
 #region удаление архивного курса
 //https://mzpo-s.ru/amo/api?delete_course
@@ -89,6 +90,10 @@ elseif($method == 'update_course')
 		die('Incorrect course uid');
 	}
 	$name = $_POST['name'];  //название
+	if(!$name)
+	{
+		die('no name');
+	}
 	$prefix = $_POST['short_name'] ?: ''; //префикс
 	$hours = $_POST['duration'] ?: '';  //часы
 	$form = $_POST['format'] ?: '';  //форма обучения
@@ -118,7 +123,7 @@ elseif($method == 'update_course')
 	unset($prices); //чистим памятьэ
 	#endregion
 
-	if(strpos($prefix, '-') !== false)
+	if(strpos($prefix, '-') === false or in_array($prefix, ['МАС-1', 'КОС-1', 'КЭС-1']))
 	{
 		$name.='('.$prefix.')';
 	}
@@ -157,20 +162,26 @@ elseif($method == 'update_course')
 	$courseAmo = new Course($course);
 	try {
 		$courseAmo->setName($name);
-		$courseAmo->setCfValue(CustomFields::SKU, $prefix);
-		$courseAmo->setCfValue(CustomFields::STUDY_FORM, $form);
-		$courseAmo->setCfValue(CustomFields::PRICE, $price);
-		$courseAmo->setCfValue(CustomFields::COURSE_DESCR, $comment);
-		$courseAmo->setCfValue(CustomFields::DURATION, $hours);
-		$courseAmo->setCfValue(CustomFields::COURSE_UID_1c, $uid);
+
+		$courseAmo->setCfValue(CustomFields::SKU[0], $prefix);
+		$courseAmo->setCfValue(CustomFields::STUDY_FORM[0], $form);
+		$courseAmo->setCfValue(CustomFields::PRICE[0], $price);
+		$courseAmo->setCfValue(CustomFields::COURSE_DESCR[0], $comment);
+		if($hours)
+		{
+			$courseAmo->setCfValue(CustomFields::DURATION[0], $hours);
+		}
+		$courseAmo->setCfValue(CustomFields::COURSE_UID_1c[0], $uid);
+		echo json_encode(['amo_ids'=>[['account_id'=> 28395871, 'entity_id'=>$courseAmo->save()]]]);
 	} catch(\AmoCRM\Exceptions\AmoCRMApiErrorResponseException $e)
 	{
+		print_r($e->getValidationErrors());
 		http_response_code(500);
 		Log::writeError('Api', $e->getValidationErrors());
 		dd('Error!');
 	}
 	http_response_code(200);
-	echo json_encode(['amo_ids'=>[['account_id'=> 28395871, 'entity_id'=>$courseAmo->save()]]]);
+	Log::writeLine('Api', 'курс '.$prefix.' обновлен!');
 
 }
 #endregion
