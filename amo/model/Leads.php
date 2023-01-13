@@ -6,20 +6,27 @@ use AmoCRM\Collections\CustomFieldsValuesCollection;
 use AmoCRM\Collections\LinksCollection;
 use AmoCRM\Collections\NotesCollection;
 use AmoCRM\Collections\TagsCollection;
+use AmoCRM\Exceptions\AmoCRMApiErrorResponseException;
 use AmoCRM\Exceptions\AmoCRMApiException;
+use AmoCRM\Exceptions\AmoCRMApiNoContentException;
 use AmoCRM\Filters\ContactsFilter;
+use AmoCRM\Filters\NotesFilter;
 use AmoCRM\Helpers\EntityTypesInterface;
 use AmoCRM\Models\ContactModel;
 use AmoCRM\Models\CustomFields\DateTimeCustomFieldModel;
 use AmoCRM\Models\CustomFieldsValues\DateTimeCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
+use AmoCRM\Models\CustomFieldsValues\NumericCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\DateCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\MultitextCustomFieldValueCollection;
+use AmoCRM\Models\CustomFieldsValues\ValueCollections\NumericCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\DateTimeCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\MultitextCustomFieldValueModel;
+use AmoCRM\Models\CustomFieldsValues\ValueModels\NumericCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
+use AmoCRM\Models\Factories\NoteFactory;
 use AmoCRM\Models\LeadModel;
 use AmoCRM\Models\NoteModel;
 use AmoCRM\Models\NoteType\CommonNote;
@@ -31,10 +38,10 @@ use MzpoAmo\CustomFields;
 
 class Leads extends MzpoAmo
 {
-	private LeadModel $lead;
-	public function __construct($post, $id = null)
+	private ?LeadModel $lead;
+	public function 	__construct($post, $type = self::SUBDOMAIN, $id = null)
 	{
-		parent::__construct();
+		parent::__construct($type);
 
 		#region если нужно склеить со старой заявкой
 		if($id != null)
@@ -42,7 +49,11 @@ class Leads extends MzpoAmo
 			Log::writeLine(Log::LEAD, 'Слияние сделки со сделкой '.$id);
 			try{
 				$this->lead = $this->apiClient->leads()->getOne($id);
-			}catch (Exception $e)
+
+			} catch (AmoCRMApiNoContentException $ex )
+			{
+				$this->lead = null;
+			} catch (Exception $e)
 			{
 				die($e);
 			}
@@ -57,13 +68,14 @@ class Leads extends MzpoAmo
 		}
 		#endregion
 
+
 	}
 
 	/**
 	 * Получение модели заявки
 	 * @return LeadModel
 	 */
-	public function getLead() : LeadModel
+	public function getLead() : ?LeadModel
 	{
 		return $this->lead;
 	}
@@ -104,7 +116,7 @@ class Leads extends MzpoAmo
 				(new CustomFieldsValuesCollection())
 					->add(
 						(new TextCustomFieldValuesModel())
-							->setFieldId(639075)
+							->setFieldId(CustomFields::TYPE[0])
 							->setValues(
 								(new TextCustomFieldValueCollection())
 									->add(
@@ -116,9 +128,9 @@ class Leads extends MzpoAmo
 
 		if($post['status'])
 		{
-			$lead->setStatusId($post['status']);
+			$this->setStatusId($post['status']);
 		}
-		$lead->setCustomFieldsValues($this->customLeadFileds($post));
+		$this->setCustomFieldsValues($this->customLeadFileds($post));
 		#endregion
 
 		#region установка тегов
@@ -133,7 +145,7 @@ class Leads extends MzpoAmo
 				(new TagModel())
 					->setName($tag));
 		}
-		$lead->setTags($tags);
+		$this->setTags($tags);
 		#endregion
 
 		#region сохранение
@@ -147,6 +159,19 @@ class Leads extends MzpoAmo
 		#endregion
 
 		return $lead;
+
+	}
+
+	public function getNote($type = NoteFactory::NOTE_TYPE_CODE_COMMON)
+	{
+		try {
+			$leadService = $this->apiClient->notes(EntityTypesInterface::LEADS);
+			$notesCollection = $leadService->getByParentId($this->lead->getId(), (new NotesFilter())->setNoteTypes([$type]));
+			return $notesCollection->last()->text;
+		} catch (Exception $e)
+		{
+			return null;
+		}
 
 	}
 
@@ -188,13 +213,14 @@ class Leads extends MzpoAmo
 	{
 
 		$fileds = new CustomFieldsValuesCollection();
+		$i = $this->type == self::SUBDOMAIN_CORP ? 1 : 2;
 		foreach ($this->post_to_amo as $post => $id)
 		{
-			if ($POST[$post])
+			if ($POST[$post] and $id[$i])
 			{
 				$fileds->add(
 					(new TextCustomFieldValuesModel())
-						->setFieldId($id)
+						->setFieldId($id[$i])
 						->setValues(
 							(new TextCustomFieldValueCollection())
 								->add(
@@ -447,4 +473,112 @@ class Leads extends MzpoAmo
 	{
 		return $this->lead->getResponsibleUserId();
 	}
+
+	/**
+	 * Получение ответственного для корп
+	 * @param $responsible
+	 * @return false|int
+	 */
+	public function getCorpResponsible($responsible)
+	{
+		if($responsible == 8993890)
+		{
+			return 8603416;
+		} else if($responsible == 8993898 )
+			{
+				return 8628763;
+			}
+		else return false;
+	}
+
+	/**
+	 * Клонирование заявки в амо корпората
+	 * @param Leads $lead
+	 * @param $id
+	 * @return LeadModel|null
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 * @throws \AmoCRM\Exceptions\InvalidArgumentException
+	 */
+	public static function clone(Leads $lead, $id = null): ?LeadModel
+	{
+		$post = [];
+
+		#region если есть сделка, с которой можно склеить
+		if($id)
+			{
+				$leadCorp = new self([], MzpoAmo::SUBDOMAIN_CORP, $id);
+				$leadCorp->newNote($lead->getNote());
+				return $leadCorp->lead;
+			}
+		#endregion
+
+		#region если нет, создаем и заполняем новую заявку
+		$leadCorp = new LeadModel();
+		$leadCorp->setName($lead->lead->getName());
+		if($resp = $lead->getCorpResponsible($lead->lead->getResponsibleUserId()))
+		{
+			$leadCorp->setResponsibleUserId($resp);
+		}
+		$cfvs = new CustomFieldsValuesCollection();
+		foreach (CustomFields::CORP_FIELDS as $field)
+		{
+			if($value = $lead->getCFValue($field[0]))
+				$cfvs->add(
+					(new TextCustomFieldValuesModel())
+						->setFieldId($field[1])
+						->setValues(
+							(new TextCustomFieldValueCollection())
+								->add(
+									(new TextCustomFieldValueModel())
+										->setValue($value)
+								)
+						)
+				);
+		}
+		$cfvs->add((new NumericCustomFieldValuesModel())->setFieldId(CustomFields::RET_ID[1])->setValues((new NumericCustomFieldValueCollection())->add((new NumericCustomFieldValueModel())->setValue($lead->lead->getId()))));
+
+		$tags = $lead->lead->getTags();
+		$leadCorp->setTags($tags
+			->add(
+				(new TagModel())
+					->setId(Tags::RETAIL_LEAD['id'])
+					->setName(Tags::RETAIL_LEAD['name'])
+			)->add(
+				(new TagModel())
+					->setId(Tags::EDUCATION_CORP['id'])
+					->setName(Tags::EDUCATION_CORP['name'])
+			)
+		);
+		$leadCorp->setCustomFieldsValues($cfvs);
+		$leadCorp->setPipelineId(Pipelines::NEW);
+		#endregion
+
+		$mzpoAmo = new MzpoAmo(MzpoAmo::SUBDOMAIN_CORP);
+	try {
+		#region сохранение
+		$newlead = $mzpoAmo->apiClient->leads()->addOne($leadCorp);
+		#endregion
+
+		#region комментарий
+		if($text = $lead->getNote())
+		{
+			$leadNotesService = $mzpoAmo->apiClient->notes(EntityTypesInterface::LEADS);
+			$Note = new CommonNote();
+			$Note->setText($text)
+				->setEntityId($newlead->getId());
+			$note = $leadNotesService->addOne($Note);
+		}
+
+		#endregion
+
+	}	catch (AmoCRMApiErrorResponseException $e)
+	{
+		dd($e->getValidationErrors());
+	}
+		return $leadCorp;
+	}
+
+
 }

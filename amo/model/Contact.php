@@ -28,9 +28,9 @@ class Contact extends MzpoAmo
 	private string $pipeline;
 	private ?int $mergeId = null;
 
-	public function __construct($array, $id = null)
+	public function __construct($array, $amo, $id = null)
 	{
-			parent::__construct();
+			parent::__construct($amo);
 			if(!$id)
 			{
 				$this->phone = $array['phone'] ?: '';
@@ -38,10 +38,14 @@ class Contact extends MzpoAmo
 				$this->name = $array['name'] ?: '';
 				$this->surname = $array['surname'] ?: '';
 				$this->pipeline = $array['pipeline'] ?: PIPELINE;
+
 				$this->contact = $this->findContact() ?: $this->createContact();
+
 				$this->mergeId = $this->checkLeads();
+
 			} else
 			{
+
 				if(is_int($id) or is_string($id))
 				{
 					$this->contact = $this->apiClient->contacts()->getOne($id);
@@ -49,7 +53,7 @@ class Contact extends MzpoAmo
 				{
 					$this->contact = $id;
 				}
-				Log::writeLine(Log::CONTACT, 'Сделка с существующим контактом '.$this->contact->getId());
+				Log::writeLine(Log::CONTACT, 'Сделка с существующим контактом '.$this->contact->getId().'-'.$this->type);
 				$this->name = $this->contact->getName();
 				$this->surname = $this->contact->getLastName();
 				$fields = $this->contact->getCustomFieldsValues();
@@ -98,19 +102,19 @@ class Contact extends MzpoAmo
 		$filter = new ContactsFilter();
 
 		#region поиск существующего контакта по телефону
-		if($this->phone)
+		if($this->phone and strlen($this->phone) > 5 )
 		{
 			try{
 				$filter->setQuery($this->phone);
 				$contacts = $this->apiClient->contacts()->get($filter);
-				Log::writeLine(Log::CONTACT, 'Сделка с существующим контактом '.$contacts->first()->getId());
-
+				Log::writeLine(Log::CONTACT, 'Сделка с существующим контактом '.$contacts->first()->getId().'-'.$this->type);
 				return $contacts->first();
 			} catch (Exception $exception)
 			{
 
 				if($exception->getCode() != 204)
 				{
+					Log::writeError(Log::CONTACT, print_r($exception));
 					die('fatal');
 				}
 			}
@@ -123,13 +127,15 @@ class Contact extends MzpoAmo
 			try{
 				$filter->setQuery($this->email);
 				$contacts = $this->apiClient->contacts()->get($filter);
-				Log::writeLine(Log::CONTACT, 'Сделка с существующим контактом '.$contacts->first()->getId());
+				Log::writeLine(Log::CONTACT, 'Сделка с существующим контактом '.$contacts->first()->getId().'-'.$this->type);
 
 				return $contacts->first();
 			} catch (Exception $exception)
 			{
 				if($exception->getCode() != 204)
 				{
+					Log::writeError(Log::CONTACT, $exception);
+
 					die('fatal');
 				}
 			}
@@ -204,7 +210,7 @@ class Contact extends MzpoAmo
 		}
 		$this->new = false;
 		#endregion
-		Log::writeLine(Log::CONTACT, 'Создан новый контакт '.$contact->getId());
+		Log::writeLine(Log::CONTACT, 'Создан новый контакт '.$contact->getId().'-'.$this->type);
 		return $contact;
 	}
 
@@ -280,7 +286,7 @@ class Contact extends MzpoAmo
 			if($code == 204){
 			}
 			else{
-				Log::write(LOG::ERROR, LOG::CONTACT, $e);
+				Log::writeError(LOG::CONTACT, $e);
 			}
 			return null;
 		}
@@ -338,6 +344,7 @@ class Contact extends MzpoAmo
 						)
 				);
 			$this->contact->setCustomFieldsValues($cfvs);
+			$this->phone = $phone;
 			return true;
 		}catch (AmoCRMApiException $e)
 		{
@@ -356,4 +363,23 @@ class Contact extends MzpoAmo
 	{
 		$this->apiClient->contacts()->updateOne($this->contact);
 	}
+
+	public function toArray()
+	{
+		return $this->contact->toArray();
+	}
+
+	public static function clone(Contact $contact)
+	{
+		$array = [
+			 'phone' => $contact->phone,
+			 'email' => $contact->email,
+		   'name' => $contact->name,
+			'pipeline' => Pipelines::NEW
+		];
+
+
+		return new self($array, MzpoAmo::SUBDOMAIN_CORP);
+	}
+
 }

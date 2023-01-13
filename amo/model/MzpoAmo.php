@@ -26,24 +26,44 @@ require_once  $_SERVER['DOCUMENT_ROOT'].'/amo/config/helpers.php';
 
 class MzpoAmo
 {
+
+
+	#region responsible users
 	public const  ADMINISTRATOR = 2576764;
 	public const  DANIL = 8348113;
- 	protected const SUBDOMAIN = 'mzpoeducationsale'; //Поддомен нужного аккаунта
+	#endregion
+	protected string $type;
+	#region retail
+ 	public const SUBDOMAIN = 'mzpoeducationsale'; //Поддомен нужного аккаунта
 	protected const SECRET = 'KAHuESf38NuVHQ6TxpzaN5eWnbe8TutYO5eo9olYoXAe7xUoYXlHwuYlh4WnFg3R';
 	protected const ID = 'a4fbd30b-b5ae-4ebd-91b1-427f58f0d709';
 	protected const REDIRECT = 'https://mzpo-s.ru/amo/';
+	#endregion
+
+	#region corp
+	public const SUBDOMAIN_CORP = 'mzpoeducation'; //Поддомен нужного аккаунта
+	protected const SECRET_CORP = 'PpfKPVKEoND3MBHh7fjLSQIcYBNaZetCmVkUXU9VMLI02ynoGJl1SJ4e4YStYust';
+	protected const ID_CORP = 'e48269b8-aca1-4ebd-8809-420d71f57522';
+	protected const REDIRECT_CORP = 'https://mzpo-s.ru/amo/mainhook.php';
+
+	#endregion
+
+	protected AmoCRMApiClient $apiClient;
 
 
-	protected $apiClient;
-
-
-	public function __construct()
+	public function __construct($type = self::SUBDOMAIN)
 	{
-
-		$this->apiClient = new AmoCRMApiClient($this::ID, $this::SECRET, $this::REDIRECT);
+		if($type == self::SUBDOMAIN)
+		{
+			$this->apiClient = new AmoCRMApiClient($this::ID, $this::SECRET, $this::REDIRECT);
+		}
+		else{
+			$this->apiClient = new AmoCRMApiClient($this::ID_CORP, self::SECRET_CORP, self::REDIRECT_CORP);
+		}
+		$this->type = $type;
 
 		#region установка и смена токенов
-		$accessToken = getToken();
+		$accessToken = getToken($type);
 		$this->apiClient->setAccessToken($accessToken)
 			->setAccountBaseDomain($accessToken->getValues()['baseDomain'])
 			->onAccessTokenRefresh(
