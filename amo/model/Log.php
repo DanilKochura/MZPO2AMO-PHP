@@ -12,7 +12,7 @@ class Log
 	public const COURSE = 'course/';
 
 	public const ERROR = 1;
-	public static function writeError($class, \Exception $exception = null)
+	public static function writeError($class,  $exception = null)
 	{
 
 		$code = $exception->getCode();

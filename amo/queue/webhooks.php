@@ -6,6 +6,7 @@ use MzpoAmo\Contact;
 use MzpoAmo\CustomFields;
 use MzpoAmo\Leads;
 use MzpoAmo\Log;
+use MzpoAmo\MzpoAmo;
 use MzpoAmo\MzposApiEvent;
 use MzpoAmo\Pipelines;
 use MzpoAmo\Statuses;
@@ -62,7 +63,6 @@ try {
 			$text = $lead->getCFValue(CustomFields::EVENT_NAME);
 			if (!$text) {
 				Log::writeError(Log::WEBHOOKS, new Exception('Lead has no Event_name'));
-
 			}
 			#endregion
 
@@ -146,6 +146,8 @@ try {
 
 		#region Удаление тега "Семинар РОМС" - костыль на время
 		elseif ($method == 'deleteroms') {
+			$msg->ack();
+			DIE();
 			#region обработка запроса
 			$id = $post['leads']['add'][0]['id'];
 			$status = $post['leads']['add'][0]['status_id'];
@@ -177,11 +179,44 @@ try {
 				} else {
 					die();
 				}
-		$contact->setPhone($tel);
-		$contact->save();
+			$contact->setPhone($tel);
+			$contact->save();
 
-	}
-	#endregion
+		}
+		#endregion
+
+		#region перевод из розницы в корпорат
+		#https://www.mzpo-s.ru/amo/webhooks/?ret2corp
+		elseif ($method == 'ret2corp')
+			{
+				#region
+				$id = $post['leads']['add'][0]['id'] ?: $post['leads']['update'][0]['id'];
+				Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
+
+				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
+				if(!$lead->getLead())
+				{
+					$msg->ack();
+					return;
+				}
+				$contact = new Contact([], MzpoAmo::SUBDOMAIN, $lead->getContact());
+
+				$contact = Contact::clone($contact);
+
+				Log::writeLine(Log::WEBHOOKS, 'Контакт склонирован: '.$contact->getContact()->getId());
+				$leadCorp = Leads::clone($lead, $contact->hasMergableLead());
+				Log::writeLine(Log::WEBHOOKS, 'Лид склонирован: '.$leadCorp->getId());
+
+				$lead->setStatus(Statuses::SEND_TO_CORP);
+				$lead->save();
+
+				Log::writeLine(Log::WEBHOOKS, 'Этап изменен');
+
+				$contact->linkLead($leadCorp);
+
+
+		}
+		#endregion
 
 		$msg->ack();
 	};
@@ -200,3 +235,6 @@ try {
 
 	file_put_contents(__DIR__.'/cons1.txt', print_r($e, 1).PHP_EOL, FILE_APPEND);
 }
+
+//https://www.mzpo-s.ru/amo/webhooks/?ret2corp
+//https://mzpo2amo.ru/wh/ret2corp/send
