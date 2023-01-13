@@ -32,6 +32,8 @@ interface Tags
 	public const FB_MEDICINSKY_MASSAG = [ 'id' => 304083,  'name' => "Fb_medicinskii-massaj" ];
 	public const FB_MFR = [ 'id' => 307875,  'name' => "Fb_mfr" ];
 	public const FB_OSNOVY_KOSMETOLOGII = [ 'id' => 304379,  'name' => "Fb_osnovy-kosmetologii" ];
+
+	public const RETAIL_LEAD = ['id' => 1212821, 'name' => 'Сделка из розницы'];
 //	public const TEST = [ 'id' => 305051,  'name' => "Fb_probnii-urok" ];
 //	public const TEST = [ 'id' => 305053,  'name' => "Fb_probnii-urok-s-lepkoi" ];
 //	public const TEST = [ 'id' => 307873,  'name' => "Fb_reabilitolog" ];
@@ -127,6 +129,7 @@ interface Tags
 	public const LK = [ 'id' => 366545,  'name' => "lk.mzpo-s.ru" ];
 	public const MZPO_S = [ 'id' => 246137,  'name' => "mzpo-s.ru" ];
 	public const EDUCATION = [ 'id' => 246171,  'name' => "mzpo.education" ];
+	public const EDUCATION_CORP = [ 'id' => 1187791,  'name' => "mzpo.education" ];
 	public const MZPOKURS = [ 'id' => 246141,  'name' => "mzpokurs.com" ];
 	public const NPS = [ 'id' => 268655,  'name' => "NPS" ];
 	public const OBR_BYX = [ 'id' => 265935,  'name' => "obr-byx.ru" ];

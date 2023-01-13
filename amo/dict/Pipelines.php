@@ -19,4 +19,5 @@ interface Pipelines
 	public const SPAM	=	3572668;  //спам
 	public const TEST_DANIL	=	6167398; //тест Данил
 	public const OPEN_LESSON	=	4586602; //пробный урок
+	public const NEW	=	5312269; //новая (КОРП)
 }

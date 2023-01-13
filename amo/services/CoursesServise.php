@@ -12,7 +12,8 @@ use MzpoAmo\MzpoAmo;
 
 class CoursesServise extends MzpoAmo
 {
-	private const CATALOG = 12463;
+
+	public const CATALOG = 12463;
 
 	public function __construct()
 	{
@@ -48,6 +49,8 @@ class CoursesServise extends MzpoAmo
 				}
 			}
 			$i+=count($catalog_elements['delete']);
+
+			#region отправка запроса к API amoCRM
 			$curl = curl_init();
 			/** Устанавливаем необходимые опции для сеанса cURL  */
 			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -59,9 +62,11 @@ class CoursesServise extends MzpoAmo
 			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 1);
 			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
 			$out = curl_exec($curl);
-
 			$code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
 			curl_close($curl);
+			#endregion
+
 			try {
 				$courses = $this->getCoursesByUid($uid);
 			} catch (AmoCRMApiException $e) {
@@ -93,16 +98,18 @@ class CoursesServise extends MzpoAmo
 			$courses = $this->getCoursesByUid($uid);  // получение коллекции курсов
 		} catch (AmoCRMApiException $e) {
 			http_response_code(404);
-			die('Course not found');
+			echo 'Course not found';
+			return;
 		}
 		$i = 0;
 		//Лимит на получение товаров из amo - 50 штук на один запрос, для этого нужен цикл. Некоторые курсы дублировались и хранятся по 200+ экземпляров.
 		while(1) {
 			if($courses->count() == 1)
 			{
-				Log::writeLine('Api', $method.' - '.'Deleted: '.$i);
+				Log::writeLine('Api', $method.' - '.$uid.'Deleted: '.$i);
 				http_response_code(200);
-				die('Success');
+				echo 'Success';
+				return;
 			}
 			$catalog_elements['delete'] = [];
 			foreach ($courses as $course) {
@@ -131,7 +138,8 @@ class CoursesServise extends MzpoAmo
 			} catch (AmoCRMApiException $e) {
 				Log::writeLine('Api', $method.' - '.'Deleted: '.$i);
 				http_response_code(200);
-				die('Success');
+				echo 'Success';
+				return;
 			}
 		}
 		#endregion
