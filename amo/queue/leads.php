@@ -3,6 +3,7 @@
 use MzpoAmo\Contact;
 use MzpoAmo\Leads;
 use MzpoAmo\Log;
+use MzpoAmo\MzpoAmo;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use reports\LeadsReport;
@@ -21,7 +22,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/reports/BaseReport.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/reports/LeadsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
-
+file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
 try {
 	$connection = new AMQPStreamConnection(QueueService::HOST, QueueService::PORT, QueueService::USER, QueueService::PASSWORD, QueueService::VHOST);
 
@@ -32,14 +33,16 @@ try {
 
 		try{
 			$post = json_decode($msg->body, true);
-			$contact = new Contact($post); //создаем контакт
+			Log::writeLine(Log::LEAD, print_r($post,1));
+			$amo = $post['amo'] == 'corp' ? MzpoAmo::SUBDOMAIN_CORP : MzpoAmo::SUBDOMAIN;
+			$contact = new Contact($post, $amo); //создаем контакт
 			if($contact->hasMergableLead()) //если есть сделка, которую можно склеить
 			{
-				$base = new Leads($post, $contact->hasMergableLead());
+				$base = new Leads($post, $amo, $contact->hasMergableLead());
 			}
 			else
 			{
-				$base = new Leads($post);
+				$base = new Leads($post, $amo);
 			}
 			if($post['comment'])
 			{

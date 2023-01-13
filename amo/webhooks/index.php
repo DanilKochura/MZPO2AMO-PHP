@@ -21,6 +21,7 @@ $method = explode('?', $request)[1];
 #region обработка POST
 $_POST['method'] = $method;
 #endregion
+file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
 
 $queue = new QueueService();
 $queue->addToQueue(QueueService::WEBHOOKS, json_encode($_POST));
