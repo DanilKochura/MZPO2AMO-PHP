@@ -185,12 +185,12 @@ try {
 		}
 		#endregion
 
-		#region перевод из розницы в корпорат
 		#https://www.mzpo-s.ru/amo/webhooks/?ret2corp
+		#region перевод из розницы в корпорат
 		elseif ($method == 'ret2corp')
 			{
 				#region
-				$id = $post['leads']['add'][0]['id'] ?: $post['leads']['update'][0]['id'];
+				$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
 				Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 
 				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
@@ -213,10 +213,56 @@ try {
 				Log::writeLine(Log::WEBHOOKS, 'Этап изменен');
 
 				$contact->linkLead($leadCorp);
-
+				#endregion
 
 		}
 		#endregion
+
+		# https://www.mzpo-s.ru/amo/webhooks/?corp2ret
+		#region успешно реализовано - корпорат
+		elseif ($method == 'corp2ret')
+		{
+			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
+			$leadCorp = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id);
+			$id_ret = $leadCorp->getCFValue(CustomFields::RET_ID[1]);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
+
+			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+			if($price = $leadCorp->getPrice())
+			{
+				$lead->setPrice($price);
+			}
+			$lead->setStatus(Statuses::SUCCESS_CORP_PIPE);
+			$lead->save();
+			Log::writeLine(Log::WEBHOOKS, 'Сделка сохранена!');
+
+		}
+		#endregion
+
+		# https://www.mzpo-s.ru/amo/webhooks/?corp2ret_fail
+		#region закрыто и не реализовано - корпорат
+		elseif ($method == 'corp2ret_fail')
+		{
+			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
+			$leadCorp = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id);
+			$id_ret = $leadCorp->getCFValue(CustomFields::RET_ID[1]);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
+
+			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+			if($price = $leadCorp->getPrice())
+			{
+				$lead->setPrice($price);
+			}
+
+			$lead->setStatus(Statuses::FAIL_CORP_PIPE);
+			$lead->save();
+			Log::writeLine(Log::WEBHOOKS, 'Сделка сохранена!');
+
+		}
+		#endregion
+
 
 		$msg->ack();
 	};

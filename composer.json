@@ -4,6 +4,7 @@
         "mk-j/php_xlsxwriter": "^0.38.0",
         "php-amqplib/php-amqplib": "^3.4",
       "ext-curl": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+      "ext-zip": "*"
     }
 }

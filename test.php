@@ -1,152 +1,70 @@
-<?php
+product_id_1C:df5f07f7-5821-11eb-86f0-82172a65f31e
+secret_key:sdDF4sdfR
+amo_ids[0][account_id]:19453687
+amo_ids[0][entity_id]:1805215
 
-use AmoCRM\Client\AmoCRMApiClient;
-use AmoCRM\Collections\CustomFieldsValuesCollection;
-use AmoCRM\Collections\LinksCollection;
-use AmoCRM\Collections\TagsCollection;
-use AmoCRM\Exceptions\AmoCRMApiException;
-use AmoCRM\Helpers\EntityTypesInterface;
-use AmoCRM\Models\ContactModel;
-use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
-use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
-use AmoCRM\Models\CustomFieldsValues\ValueCollections\MultitextCustomFieldValueCollection;
-use AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection;
-use AmoCRM\Models\CustomFieldsValues\ValueModels\MultitextCustomFieldValueModel;
-use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
-use AmoCRM\Models\LeadModel;
-use AmoCRM\Models\NoteType\CommonNote;
-use AmoCRM\Models\TagModel;
-use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
 
-require_once '../vendor/autoload.php';
-require_once 'config/db.php';
-require_once 'config/tokenActions.php';
-$post = [
-	'phone' => '+74985454234',
-	'name' => 'Данил',
-	'surname' => 'Кочура',
-	'email' => 'kochura2017@yandex.ru',
-	'form_name_site' => 'Заявка с какой-то там формы',
-	'site' => 'mzpo-s.ru',
-	'course' => 'Курсы чего-то там',
-	'comment' => 'Курсы чего-то там',
-];
-$subdomain = 'mzpoeducationsale'; //Поддомен нужного аккаунта
-$clientSecret = 'KAHuESf38NuVHQ6TxpzaN5eWnbe8TutYO5eo9olYoXAe7xUoYXlHwuYlh4WnFg3R';
-$clientId = 'a4fbd30b-b5ae-4ebd-91b1-427f58f0d709';
-$redirectUri = 'https://mzpo-s.ru/amo/';
-/** Соберем данные для запроса */
-$apiClient = new AmoCRMApiClient($clientId, $clientSecret, $redirectUri);
-//var_dump($apiClient); exit;
-$accessToken = getToken();
-$apiClient->setAccessToken($accessToken)
-	->setAccountBaseDomain($accessToken->getValues()['baseDomain'])
-	->onAccessTokenRefresh(
-		function (\League\OAuth2\Client\Token\AccessTokenInterface $accessToken, string $baseDomain) {
-			saveToken(
-				[
-					'accessToken' => $accessToken->getToken(),
-					'refreshToken' => $accessToken->getRefreshToken(),
-					'expires' => $accessToken->getExpires(),
-					'baseDomain' => $baseDomain,
-				]
-			);
-		});
-if($post)
-{
-	$lead = (new LeadModel())
-		->setName('Новая заявка с сайта '.$post['site'])
-		->setPipelineId(PIPELINE)
-		->setTags((new TagsCollection())
-			->add(
-				(new TagModel())
-					->setName($post['site'])
-			)->add(
-				(new TagModel())
-					->setName('test')
-			))
-		->setCustomFieldsValues(
-			(new CustomFieldsValuesCollection())
-				->add(
-					(new TextCustomFieldValuesModel())
-						->setFieldId(TYPE)
-						->setValues(
-							(new TextCustomFieldValueCollection())
-								->add(
-									(new TextCustomFieldValueModel())
-										->setValue($post['form_name_site'])
-								)
-						)
-				)
-//				->add(
-//					(new TextCustomFieldValuesModel())
-//						->setFieldCode(639075)
-//						->setValues(
-//							(new TextCustomFieldValueCollection())
-//								->add(
-//									(new TextCustomFieldValueModel())
-//										->setValue('a')
-//								)
-//						)
-//				)
+name:Производственная практика 120/60
+short_name:ПР
+duration:0
 
-		);
-		$contact = (new ContactModel())
-		->setFirstName($post['name'])
-		->setLastName($post['surname'])
-		->setCustomFieldsValues(
-			(new CustomFieldsValuesCollection())
-				->add(
-					(new MultitextCustomFieldValuesModel())
-						->setFieldCode('PHONE')
-						->setValues(
-							(new MultitextCustomFieldValueCollection())
-								->add(
-									(new MultitextCustomFieldValueModel())
-										->setValue($post['phone'])
-								)
-						)
-				)
-				->add(
-					(new MultitextCustomFieldValuesModel())
-						->setFieldCode('EMAIL')
-						->setValues(
-							(new MultitextCustomFieldValueCollection())
-								->add(
-									(new MultitextCustomFieldValueModel())
-										->setValue($post['email'])
-								)
-						)
-				)
+ItemPrices[0][PriceType]:Основная цена
+ItemPrices[0][UID]:9e633e6d-3d2d-11eb-86e1-82172a65f31e
+ItemPrices[0][Price]:6000
 
-		);
 
-	try {
-		$apiClient->contacts()->addOne($contact);
-	} catch (AmoCRMException $e)
-	{
-		die($e->getValidationErrors());
-	}
-	$newLead = $apiClient->leads()->addOne( $lead );
-	$id = $newLead->getId();
-	$links = new LinksCollection();
-	$links->add($newLead);
-	try {
-		$apiClient->contacts()->link($contact, $links);
-	} catch (AmoCRMApiException $e) {
-		printError($e);
-		die;
-	}
-	$leadNotesService = $apiClient->notes(EntityTypesInterface::LEADS);
-	$serviceMessageNote = new CommonNote();
-	$serviceMessageNote->setEntityId(1)
-		->setText($post['comment'])
-		->setEntityId($id);
-	try {
-		$notesCollection = $leadNotesService->addOne($serviceMessageNote);
-	} catch (AmoCRMApiException $e) {
-		PrintError($e);
-		die;
-	}
-}
+ItemPrices[1][PriceType] => Скидка 10%
+[UID] => 5bba5dc3-580c-11eb-86f0-82172a65f31e
+[Price] => 5700
+)
 
+[2] => Array
+(
+[PriceType] => Зел.цена
+[UID] => 5bba5dc4-580c-11eb-86f0-82172a65f31e
+[Price] => 2500
+)
+
+[3] => Array
+(
+[PriceType] => Дист.
+[UID] => 803fbc13-580c-11eb-86f0-82172a65f31e
+[Price] => 5100
+)
+
+[4] => Array
+(
+[PriceType] => Инд. цена
+[UID] => 8a93a07d-580c-11eb-86f0-82172a65f31e
+[Price] => 7500
+)
+
+[5] => Array
+(
+[PriceType] => Скидка 20%
+[UID] => ac09359f-5b2e-11eb-86f0-82172a65f31e
+[Price] => 0
+)
+
+[6] => Array
+(
+[PriceType] => Скидка 30%
+[UID] => b2d727eb-5b2e-11eb-86f0-82172a65f31e
+[Price] => 0
+)
+
+[7] => Array
+(
+[PriceType] => Цена выходного дня
+[UID] => 3734f3f1-8d63-11eb-891f-20040ffb909d
+[Price] => 3125
+)
+
+[8] => Array
+(
+[PriceType] => Мини-индивидуал (3-6)
+[UID] => 19494cda-8014-11ec-8931-20040ffb909d
+[Price] => 3750
+)
+
+)

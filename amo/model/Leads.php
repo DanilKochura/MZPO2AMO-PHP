@@ -479,7 +479,7 @@ class Leads extends MzpoAmo
 	 * @param $responsible
 	 * @return false|int
 	 */
-	public function getCorpResponsible($responsible)
+	public static function getCorpResponsible($responsible)
 	{
 		if($responsible == 8993890)
 		{
@@ -509,7 +509,11 @@ class Leads extends MzpoAmo
 		if($id)
 			{
 				$leadCorp = new self([], MzpoAmo::SUBDOMAIN_CORP, $id);
-				$leadCorp->newNote($lead->getNote());
+				if($text = $lead->getNote())
+				{
+					$leadCorp->newNote($text);
+
+				}
 				return $leadCorp->lead;
 			}
 		#endregion
@@ -517,7 +521,7 @@ class Leads extends MzpoAmo
 		#region если нет, создаем и заполняем новую заявку
 		$leadCorp = new LeadModel();
 		$leadCorp->setName($lead->lead->getName());
-		if($resp = $lead->getCorpResponsible($lead->lead->getResponsibleUserId()))
+		if($resp = Leads::getCorpResponsible($lead->lead->getResponsibleUserId()))
 		{
 			$leadCorp->setResponsibleUserId($resp);
 		}
@@ -539,7 +543,7 @@ class Leads extends MzpoAmo
 		}
 		$cfvs->add((new NumericCustomFieldValuesModel())->setFieldId(CustomFields::RET_ID[1])->setValues((new NumericCustomFieldValueCollection())->add((new NumericCustomFieldValueModel())->setValue($lead->lead->getId()))));
 
-		$tags = $lead->lead->getTags();
+		$tags = $lead->lead->getTags() ?: new TagsCollection();
 		$leadCorp->setTags($tags
 			->add(
 				(new TagModel())
@@ -578,6 +582,16 @@ class Leads extends MzpoAmo
 		dd($e->getValidationErrors());
 	}
 		return $leadCorp;
+	}
+
+	public function getPrice()
+	{
+		return $this->lead->getPrice();
+	}
+
+	public function setPrice($price)
+	{
+		$this->lead->setPrice($price);
 	}
 
 

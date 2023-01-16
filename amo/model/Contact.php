@@ -377,9 +377,10 @@ class Contact extends MzpoAmo
 		   'name' => $contact->name,
 			'pipeline' => Pipelines::NEW
 		];
-
-
-		return new self($array, MzpoAmo::SUBDOMAIN_CORP);
+		$contactCorp = new self($array, MzpoAmo::SUBDOMAIN_CORP);
+		$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));
+		$contactCorp->save();
+		return $contactCorp;
 	}
 
 }

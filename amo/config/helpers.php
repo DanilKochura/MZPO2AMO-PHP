@@ -1,6 +1,7 @@
 <?php
 
 
+use AmoCRM\Exceptions\AmoCRMApiErrorResponseException;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use League\OAuth2\Client\Token\AccessToken;
 
@@ -37,14 +38,14 @@ function saveToken($accessToken)
 /**
  * @return AccessToken
  */
-function getToken()
+function getToken($type)
 {
 	if (!file_exists(TOKEN_FILE)) {
 		exit('Access token file not found');
 	}
-
-	$accessToken = json_decode(file_get_contents(TOKEN_FILE), true);
-
+	$token = new TokenDb();
+	$accessToken = $token->getToken($type);
+//	$accessToken = json_decode(file_get_contents(TOKEN_FILE), true);
 	if (
 		isset($accessToken)
 		&& isset($accessToken['accessToken'])
