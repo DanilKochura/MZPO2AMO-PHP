@@ -50,6 +50,8 @@ ___
 
 [webhooks/index.php](/amo/webhooks/index.php) - точка входа для всех вебхуков amoCRM
 
+[Полный список вебхуков]('https://docs.google.com/spreadsheets/d/1_tFSuXGYM3u9ir7p-5Zw3H83GOVC_kXiy00KH8vuIks/edit#gid=0')
+
 ___
 ## API для 1С
 
