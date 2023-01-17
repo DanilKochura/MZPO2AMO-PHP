@@ -12,4 +12,10 @@ interface Statuses
 
 	public const SUCCESS_CORP_PIPE = 142;
 	public const FAIL_CORP_PIPE = 143;
+
+	public const NEW_LEAD_WEBINARS = 32544562;
+
+	public const NEW_LEAD_OPEN_LESSON = 42430264;
+
+	public const LK_EVENTS = 53540082;
 }
