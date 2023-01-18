@@ -33,7 +33,9 @@ interface CustomFields
 
 	public const COURSE_UID_1c = [710407];
 
-	public const RET_ID = [null, 759479];
+
+	public const RET_ID = [null, 752191];
+	public const ID_LEAD_RET = [null, 759479];
 
 	public const CORP_FIELDS = [
 		self::SITE, self::TYPE, self::ROISTAT, self::PAGE, self::RET_ID
