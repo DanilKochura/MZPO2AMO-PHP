@@ -105,7 +105,28 @@ class Leads extends MzpoAmo
 	 */
 	public function newLead(array $post) : LeadModel
 	{
-		$pipeline = $post['pipeline'] ?: PIPELINE;
+//		$pipeline = $post['pipeline'] ?: PIPELINE;
+
+		if($this->type == self::SUBDOMAIN)
+		{
+			$price = (int)$post['price'] ?: 0;
+			$webinar = (bool)$post['webinar'];
+			$events = (bool)$post['events'];
+			$demoLesson = (bool)(isset($post['form_name_site']) and strpos('Пробный урок', $post['form_name_site'] !== false));
+
+			if ($price == 0 &&
+				$webinar)
+			{
+				$pipeline = Pipelines::FREE_WEBINARS;
+				$status = Statuses::NEW_LEAD_WEBINARS;
+			}
+
+			if ($demoLesson)
+			{
+				$pipeline = Pipelines::OPEN_LESSON;
+				$status = Statuses::NEW_LEAD_OPEN_LESSON;
+			}
+		}
 
 		#region создание модели лида
 		$lead = (new LeadModel());
@@ -128,24 +149,9 @@ class Leads extends MzpoAmo
 
 		if($post['status'])
 		{
-			$this->setStatusId($post['status']);
+			$lead->setStatusId($post['status']);
 		}
-		$this->setCustomFieldsValues($this->customLeadFileds($post));
-		#endregion
-
-		#region установка тегов
-		if(!$post['tags'])
-		{
-			$post['tags'][0] =$post['site'];
-		}
-		$tags = new TagsCollection();
-		foreach($post['tags'] as $tag)
-		{
-			$tags->add(
-				(new TagModel())
-					->setName($tag));
-		}
-		$this->setTags($tags);
+		$lead->setCustomFieldsValues($this->customLeadFileds($post));
 		#endregion
 
 		#region сохранение
@@ -584,15 +590,34 @@ class Leads extends MzpoAmo
 		return $leadCorp;
 	}
 
-	public function getPrice()
+
+	/**
+	 * Получение поля бюджет
+	 * @return int|null
+	 */
+	public function getPrice(): ?int
 	{
 		return $this->lead->getPrice();
 	}
 
+	/**
+	 * Установка поля бюджет
+	 * @param $price
+	 * @return void
+	 */
 	public function setPrice($price)
 	{
 		$this->lead->setPrice($price);
 	}
 
+	/**
+	 * Получение тега сделки по id
+	 * @param $tag
+	 * @return TagModel|null
+	 */
+	public function hasTag($tag): ?TagModel
+	{
+		return $this->lead->getTags()->getBy('fieldID', $tag);
+	}
 
 }

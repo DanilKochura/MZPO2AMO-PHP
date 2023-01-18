@@ -2,6 +2,7 @@
 
 namespace MzpoAmo;
 
+use AmoCRM\Collections\ContactsCollection;
 use AmoCRM\Collections\CustomFieldsValuesCollection;
 use AmoCRM\Collections\LinksCollection;
 use AmoCRM\Exceptions\AmoCRMApiException;
@@ -37,7 +38,7 @@ class Contact extends MzpoAmo
 				$this->email = $array['email'] ?: '';
 				$this->name = $array['name'] ?: '';
 				$this->surname = $array['surname'] ?: '';
-				$this->pipeline = $array['pipeline'] ?: PIPELINE;
+				$this->pipeline = $array['pipeline'];
 
 				$this->contact = $this->findContact() ?: $this->createContact();
 
@@ -364,11 +365,23 @@ class Contact extends MzpoAmo
 		$this->apiClient->contacts()->updateOne($this->contact);
 	}
 
+	/**
+	 * Обертка над LeadModel->toArray()
+	 * @return array
+	 */
 	public function toArray()
 	{
 		return $this->contact->toArray();
 	}
 
+	/**
+	 * Клонирование контакта в амо корпората с проверкой на дубли
+	 * @param Contact $contact
+	 * @return Contact
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 */
 	public static function clone(Contact $contact)
 	{
 		$array = [
@@ -381,6 +394,36 @@ class Contact extends MzpoAmo
 		$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));
 		$contactCorp->save();
 		return $contactCorp;
+	}
+
+	/**
+	 * Поиск контактов по номеру телефона
+	 * @param $phone
+	 * @return ContactsCollection|string|void|null
+	 */
+	public static function findByPhone($phone)
+	{
+		$mzpoAmo = new MzpoAmo();
+		$filter = new ContactsFilter();
+		$ret = new ContactsCollection();
+		#region поиск существующего контакта по телефону
+
+		try{
+				$phone = ltrim($phone, '8');
+				$phone = ltrim($phone, '7');
+				$phone = ltrim($phone, '+7');
+				$filter->setQuery($phone);
+				$contacts = $mzpoAmo->apiClient->contacts()->get($filter);
+				return $contacts;
+			} catch (Exception $exception)
+			{
+				if($exception->getCode() != 204)
+				{
+					die('fatal');
+				}
+			}
+		#endregion
+			return 'not found';
 	}
 
 }
