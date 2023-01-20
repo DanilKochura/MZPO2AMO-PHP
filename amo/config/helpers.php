@@ -40,9 +40,7 @@ function saveToken($accessToken)
  */
 function getToken($type)
 {
-	if (!file_exists(TOKEN_FILE)) {
-		exit('Access token file not found');
-	}
+	
 	$token = new TokenDb();
 	$accessToken = $token->getToken($type);
 //	$accessToken = json_decode(file_get_contents(TOKEN_FILE), true);
