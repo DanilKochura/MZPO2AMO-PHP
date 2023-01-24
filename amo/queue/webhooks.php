@@ -194,6 +194,7 @@ try {
 				Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 
 				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
+				file_put_contents(__DIR__.'/0.txt', print_r($lead->getLead(), 1), FILE_APPEND);
 				if(!$lead->getLead())
 				{
 					$msg->ack();
@@ -226,9 +227,26 @@ try {
 			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 			$leadCorp = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id);
 			$id_ret = $leadCorp->getCFValue(CustomFields::RET_ID[1]);
+			$id_ret1 = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
+			if(!$id_ret)
+			{
+				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не найдена!');
+				$id_ret = $id_ret1;
+			}
 			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
 
 			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+			if(!$lead->getLead())
+			{
+				$id_ret = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
+				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице (по второму полю): '.$id_ret);
+				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+				if(!$lead->getLead()) {
+					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не существует!');
+					$msg->ack();
+					die();
+				}
+			}
 			if($price = $leadCorp->getPrice())
 			{
 				$lead->setPrice($price);
@@ -248,9 +266,34 @@ try {
 			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 			$leadCorp = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id);
 			$id_ret = $leadCorp->getCFValue(CustomFields::RET_ID[1]);
+			$id_ret1 = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
+
+				if(!$id_ret)
+				{
+					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не найдена!');
+					$id_ret = $id_ret1;
+				}
+
+
 			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
 
 			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+			if(!$lead->getLead())
+			{
+				if(!$id_ret1)
+				{
+					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не найдена');
+					$msg->ack();
+					die();
+				}
+				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице (по второму полю): '.$id_ret);
+				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+				if(!$lead->getLead()) {
+					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не существует!');
+					$msg->ack();
+					die();
+				}
+			}
 			if($price = $leadCorp->getPrice())
 			{
 				$lead->setPrice($price);
@@ -279,7 +322,7 @@ try {
 } catch (Exception $e) {
 	http_response_code(400);
 
-	file_put_contents(__DIR__.'/cons1.txt', print_r($e, 1).PHP_EOL, FILE_APPEND);
+	file_put_contents(__DIR__.'/cons1.txt', print_r($e, 1).PHP_EOL);
 }
 
 //https://www.mzpo-s.ru/amo/webhooks/?ret2corp
