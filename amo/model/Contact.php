@@ -5,6 +5,7 @@ namespace MzpoAmo;
 use AmoCRM\Collections\ContactsCollection;
 use AmoCRM\Collections\CustomFieldsValuesCollection;
 use AmoCRM\Collections\LinksCollection;
+use AmoCRM\Exceptions\AmoCRMApiErrorResponseException;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Filters\ContactsFilter;
 use AmoCRM\Models\ContactModel;
@@ -391,6 +392,8 @@ class Contact extends MzpoAmo
 			'pipeline' => Pipelines::NEW
 		];
 		$contactCorp = new self($array, MzpoAmo::SUBDOMAIN_CORP);
+		$contactCorp->setCreatedByCorp();
+		$contactCorp->setUpdatedByCorp();
 		$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));
 		$contactCorp->save();
 		return $contactCorp;
@@ -424,6 +427,17 @@ class Contact extends MzpoAmo
 			}
 		#endregion
 			return 'not found';
+	}
+
+
+	public function setCreatedByCorp($id=9081002)
+	{
+		$this->contact->setCreatedBy($id);
+	}
+
+	public function setUpdatedByCorp($id=9081002)
+	{
+		$this->contact->setUpdatedBy($id);
 	}
 
 }

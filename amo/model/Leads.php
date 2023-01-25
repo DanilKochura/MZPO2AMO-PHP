@@ -418,9 +418,17 @@ class Leads extends MzpoAmo
 	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
 	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
 	 */
-	public function getContact()
+	public function getContact(): ?ContactModel
 	{
-		return $this->apiClient->contacts()->getOne($this->apiClient->leads()->getLinks($this->lead)->first()->getToEntityId());
+		$links = $this->apiClient->leads()->getLinks($this->lead);
+		foreach ($links as $link)
+		{
+			if($link->getToEntityType() == 'contacts')
+			{
+				return $this->apiClient->contacts()->getOne($link->getToEntityId());
+			}
+		}
+		return null;
 	}
 
 	/**
