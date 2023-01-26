@@ -20,4 +20,7 @@ interface Pipelines
 	public const TEST_DANIL	=	6167398; //тест Данил
 	public const OPEN_LESSON	=	4586602; //пробный урок
 	public const NEW	=	5312269; //новая (КОРП)
+
+	public const TEST_CORP = 6300634; //тест (корп)
+	public const DOG = 5238031; //договорной (корп)
 }

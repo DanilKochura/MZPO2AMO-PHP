@@ -36,6 +36,9 @@ interface CustomFields
 
 	public const RET_ID = [null, 752191];
 	public const ID_LEAD_RET = [null, 759479];
+	public const LEAD_DOG = [null, 759477];
+
+	public const CORP_MAN = [761425];
 
 	public const CORP_FIELDS = [
 		self::SITE, self::TYPE, self::ROISTAT, self::PAGE, self::RET_ID

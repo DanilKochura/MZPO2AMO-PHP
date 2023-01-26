@@ -25,6 +25,7 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/CustomFields.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Pipelines.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Tags.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Statuses.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Users.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/services/QueueService.php';
 require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/BaseReport.php';
 require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/EventsReport.php';
@@ -302,6 +303,17 @@ try {
 			$lead->setStatus(Statuses::FAIL_CORP_PIPE);
 			$lead->save();
 			Log::writeLine(Log::WEBHOOKS, 'Сделка сохранена!');
+
+		}
+		#endregion
+
+		# https://www.mzpo-s.ru/amo/webhooks/?corp2agr
+		#region закрыто и не реализовано - корпорат
+		elseif ($method == 'corp2agr')
+		{
+			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
+			Leads::cloneToAgr($id);
 
 		}
 		#endregion

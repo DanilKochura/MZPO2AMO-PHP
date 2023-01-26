@@ -628,4 +628,57 @@ class Leads extends MzpoAmo
 		return $this->lead->getTags()->getBy('fieldID', $tag);
 	}
 
+
+	public static function cloneToAgr($id)
+		{
+			$apiClient = (new MzpoAmo(MzpoAmo::SUBDOMAIN_CORP))->apiClient;
+			$leadCorp  = $apiClient->leads()->getOne($id, [LeadModel::CONTACTS]);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка получена '.$id);
+			$name = $apiClient->users()->getOne($leadCorp->getResponsibleUserId())->getName();
+
+			$lead = new LeadModel();
+			$csvf = $leadCorp->getCustomFieldsValues();
+			$csvf->add((new \AmoCRM\Models\CustomFieldsValues\NumericCustomFieldValuesModel())->setFieldId(CustomFields::ID_LEAD_RET[1])->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\NumericCustomFieldValueCollection())->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\NumericCustomFieldValueModel())->setValue($leadCorp->getId()))))
+			->add((new TextCustomFieldValuesModel())->setFieldId(CustomFields::CORP_MAN[0])->setValues((new TextCustomFieldValueCollection())->add((new NumericCustomFieldValueModel())->setValue($name))));
+			$lead->setName($leadCorp->getName())
+				->setPrice($leadCorp->getPrice())
+				->setTags($leadCorp->getTags())
+				->setCompany($leadCorp->getCompany())
+				->setContacts($leadCorp->getContacts())
+				->setPipelineId(Pipelines::DOG)
+				->setCustomFieldsValues($csvf)
+				->setResponsibleUserId(Users::SIDOROVA);
+			;
+
+
+			$apiClient->leads()->addOne($lead);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка  склонирована: '.$lead->getId());
+			$csvf->add((new \AmoCRM\Models\CustomFieldsValues\NumericCustomFieldValuesModel())->setFieldId(CustomFields::LEAD_DOG[1])->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\NumericCustomFieldValueCollection())->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\NumericCustomFieldValueModel())->setValue($lead->getId()))));
+			$apiClient->leads()->updateOne($leadCorp->setCustomFieldsValues($csvf));
+			Log::writeLine(Log::WEBHOOKS, 'Старая сделка обновлена!');
+
+			try {
+			$leadNotesService = $apiClient->notes(EntityTypesInterface::LEADS);
+			$notesCollection = $leadNotesService->getByParentId($leadCorp->getId(), (new NotesFilter())->setNoteTypes([NoteFactory::NOTE_TYPE_CODE_COMMON]));
+			$nn = new NotesCollection();
+			foreach ($notesCollection as $n)
+			{
+				$nn->add($n->setEntityId($lead->getId()));
+			}
+			$Note = new CommonNote();
+
+
+			$Note->setText('Ответственный менеджер в корпорате: '.$name)
+				->setEntityId($lead->getId());
+			$note = $leadNotesService->addOne($Note);
+			$apiClient->notes(EntityTypesInterface::LEADS)->add($nn);
+
+		} catch (AmoCRMApiException $e) {
+			printError($e);
+			die;
+		}
+		Log::writeLine(Log::WEBHOOKS, 'Комментарии добавлены!');
+
+
+	}
 }
