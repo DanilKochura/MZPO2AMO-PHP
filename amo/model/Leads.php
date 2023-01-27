@@ -629,13 +629,25 @@ class Leads extends MzpoAmo
 	}
 
 
+	/**
+	 * Метод для клонирования лида в договорной отдел
+	 * @param $id - id заявки
+	 * @return void
+	 * @throws AmoCRMApiException
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\AmoCRMoAuthApiException
+	 */
 	public static function cloneToAgr($id)
 		{
-			$apiClient = (new MzpoAmo(MzpoAmo::SUBDOMAIN_CORP))->apiClient;
+			$apiClient = (new MzpoAmo(MzpoAmo::SUBDOMAIN_CORP))->apiClient; //в этом методе было проще отойти от системы моделей
+			#region Получение заявке в корпорате
 			$leadCorp  = $apiClient->leads()->getOne($id, [LeadModel::CONTACTS]);
 			Log::writeLine(Log::WEBHOOKS, 'Сделка получена '.$id);
-			$name = $apiClient->users()->getOne($leadCorp->getResponsibleUserId())->getName();
+			#endregion
 
+			$name = $apiClient->users()->getOne($leadCorp->getResponsibleUserId())->getName(); //ответственный старой заявки (корп)
+
+			#region Клонирование заявки в договорной
 			$lead = new LeadModel();
 			$csvf = $leadCorp->getCustomFieldsValues();
 			$csvf->add((new \AmoCRM\Models\CustomFieldsValues\NumericCustomFieldValuesModel())->setFieldId(CustomFields::ID_LEAD_RET[1])->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\NumericCustomFieldValueCollection())->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\NumericCustomFieldValueModel())->setValue($leadCorp->getId()))))
@@ -649,36 +661,45 @@ class Leads extends MzpoAmo
 				->setCustomFieldsValues($csvf)
 				->setResponsibleUserId(Users::SIDOROVA);
 			;
-
-
 			$apiClient->leads()->addOne($lead);
 			Log::writeLine(Log::WEBHOOKS, 'Сделка  склонирована: '.$lead->getId());
+			#endregion
+
+			#region Обновление заявке в корпорате
 			$csvf->add((new \AmoCRM\Models\CustomFieldsValues\NumericCustomFieldValuesModel())->setFieldId(CustomFields::LEAD_DOG[1])->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\NumericCustomFieldValueCollection())->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\NumericCustomFieldValueModel())->setValue($lead->getId()))));
 			$apiClient->leads()->updateOne($leadCorp->setCustomFieldsValues($csvf));
 			Log::writeLine(Log::WEBHOOKS, 'Старая сделка обновлена!');
+			#endregion
 
-			try {
+			#region Сохранение ответственного (по просьбе Левана)
 			$leadNotesService = $apiClient->notes(EntityTypesInterface::LEADS);
+			$Note = new CommonNote();
+			$Note->setText('Ответственный менеджер в корпорате: '.$name)
+			->setEntityId($lead->getId());
+			$note = $leadNotesService->addOne($Note);
+			#endregion
+
+			#region Перенос примечаний
 			$notesCollection = $leadNotesService->getByParentId($leadCorp->getId(), (new NotesFilter())->setNoteTypes([NoteFactory::NOTE_TYPE_CODE_COMMON]));
 			$nn = new NotesCollection();
 			foreach ($notesCollection as $n)
 			{
 				$nn->add($n->setEntityId($lead->getId()));
 			}
-			$Note = new CommonNote();
-
-
-			$Note->setText('Ответственный менеджер в корпорате: '.$name)
-				->setEntityId($lead->getId());
-			$note = $leadNotesService->addOne($Note);
 			$apiClient->notes(EntityTypesInterface::LEADS)->add($nn);
+			#endregion
 
-		} catch (AmoCRMApiException $e) {
-			printError($e);
-			die;
-		}
-		Log::writeLine(Log::WEBHOOKS, 'Комментарии добавлены!');
+
+
+			Log::writeLine(Log::WEBHOOKS, 'Комментарии добавлены!');
 
 
 	}
+
+
+	public function getStatus()
+	{
+		return $this->lead->getStatusId();
+	}
+
 }
