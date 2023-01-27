@@ -308,12 +308,71 @@ try {
 		#endregion
 
 		# https://www.mzpo-s.ru/amo/webhooks/?corp2agr
-		#region закрыто и не реализовано - корпорат
+		#region перевод в договорной отдел
 		elseif ($method == 'corp2agr')
 		{
 			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
 			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
-			Leads::cloneToAgr($id);
+			try{
+				Leads::cloneToAgr($id);
+			} catch (AmoCRMApiException $e)
+			{
+				Log::writeError(Log::WEBHOOKS, $e);
+				$msg->ack();
+				die();
+			}
+
+		}
+		#endregion
+
+		# https://www.mzpo-s.ru/amo/webhooks/?agr2corp
+		#region возвращение из договорного отдела (торжественно)
+		elseif ($method == 'agr2corp')
+		{
+			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
+			
+			#region получение сделки
+			$lead = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка получена: '.$id);
+			#endregion
+
+			#region Получение связанной сделки в продажах
+			try {
+				$id_c = $lead->getCFValue(CustomFields::ID_LEAD_RET[1]);
+				if(!$id_c)
+				{
+					Log::writeLine(Log::WEBHOOKS, 'Нет связи со сделкой продаж');
+					$msg->ack();
+					die();
+				}
+			} catch (AmoCRMApiException $e){
+				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не найдена');
+				$msg->ack();
+				die();
+			}
+			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_c);
+			#endregion
+
+			#region Получение сделки в продажах
+			$lead_c = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id_c);
+			if(!$lead_c->getLead()) {
+				Log::writeLine(Log::WEBHOOKS, 'Сделка в продажах не существует!');
+				$msg->ack();
+				die();
+			}
+			#endregion
+
+			#region Смена статуса и сохранение
+			if($lead_c->getStatus() != Statuses::DOGOVORNOY_CORP)
+			{
+				Log::writeLine(Log::WEBHOOKS, 'Некорректный этап!');
+				$msg->ack();
+				die();
+			}
+			$lead_c->setStatus(Statuses::SENT_BILL);
+			$lead_c->save();
+			#endregion
 
 		}
 		#endregion

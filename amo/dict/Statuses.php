@@ -18,4 +18,9 @@ interface Statuses
 	public const NEW_LEAD_OPEN_LESSON = 42430264;
 
 	public const LK_EVENTS = 53540082;
+
+
+	public const DOGOVORNOY_CORP = 47337076;
+
+	public const SENT_BILL = 47317651;
 }
