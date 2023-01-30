@@ -22,6 +22,11 @@ $method = explode('?', $request)[1];
 $_POST['method'] = $method;
 #endregion
 file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+$queue_n = QueueService::WEBHOOKS;
 
+if($method == 'initial_lead')
+{
+	$queue_n = QueueService::CALLWAITER;
+}
 $queue = new QueueService();
-$queue->addToQueue(QueueService::WEBHOOKS, json_encode($_POST));
+$queue->addToQueue($queue_n, json_encode($_POST));

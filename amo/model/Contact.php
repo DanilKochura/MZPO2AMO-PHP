@@ -430,6 +430,19 @@ class Contact extends MzpoAmo
 	}
 
 
+	/**
+	 * Кастомное поле контакта
+	 * @param $id
+	 * @return array|bool|int|object|string|null
+	 */
+	public function getCFValue($id)
+	{
+		return $this->contact->getCustomFieldsValues()->getBy('fieldId', $id)->getValues()[0]->getValue();
+	}
+
+
+
+
 	public function setCreatedByCorp($id=9081002)
 	{
 		$this->contact->setCreatedBy($id);

@@ -317,7 +317,13 @@ try {
 				Leads::cloneToAgr($id);
 			} catch (AmoCRMApiException $e)
 			{
-				Log::writeError(Log::WEBHOOKS, $e);
+				if($e->getCode() == 204)
+				{
+					Log::writeLine(Log::WEBHOOKS, 'Комментарии не найдены: '.$id);
+				} else
+				{
+					Log::writeError(Log::WEBHOOKS, $e);
+				}
 				$msg->ack();
 				die();
 			}
