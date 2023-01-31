@@ -8,8 +8,10 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class QueueService
 {
+	public const CALLWAITER = 'callwaiter_1';
 	public const LEADS = 'leads';
 	public const WEBHOOKS = 'webhooks';
+	public const INTEGRATION_1C = '1c';
 
 	public  const HOST = 'hawk.rmq.cloudamqp.com';
 

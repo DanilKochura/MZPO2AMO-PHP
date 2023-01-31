@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Схема получения лида:
+ * 1. Ищем контакт
+ * 2. Ищем связанные не закрытые сделки (если контакт найден)
+ * 3. Парсим тип заявки (вебинар, мероприятие, пробный урок)
+ * 4. Добавляем/склеиваем сделку
+ * 5. (Обработка вебинаров)
+ * 6. Добавляем комментарий
+ * 7. (Запись в гугл-таблицы)
+ */
+
+
 use MzpoAmo\Contact;
 use MzpoAmo\Leads;
 use MzpoAmo\Log;
@@ -35,8 +47,13 @@ try {
 			$post = json_decode($msg->body, true);
 			Log::writeLine(Log::LEAD, print_r($post,1));
 			$amo = $post['amo'] == 'corp' ? MzpoAmo::SUBDOMAIN_CORP : MzpoAmo::SUBDOMAIN;
-			$contact = new Contact($post, $amo); //создаем контакт
-			if($contact->hasMergableLead()) //если есть сделка, которую можно склеить
+			$contact = new Contact($post, $amo); //создаем контакт #1
+
+			$events = (bool)$post['events'];
+
+
+
+			if($contact->hasMergableLead()) //если есть сделка, которую можно склеить #2
 			{
 				$base = new Leads($post, $amo, $contact->hasMergableLead());
 			}
@@ -46,14 +63,14 @@ try {
 			}
 			if($post['comment'])
 			{
-				$note = $base->newNote($post['comment']);
+				$note = $base->newNote($post['comment']); #6
 			}
 			if($base and $contact and $contact->linkLead($base->getLead()))
 			{
 				echo 'ok';
 			}
 			$report = new LeadsReport();
-			$report->add([$post['site'], date('Y-m-d H:i:s'), json_encode($post), $base->getLead()->getId(), $contact->getContact()->getId()]);
+			$report->add([$post['site'], date('Y-m-d H:i:s'), json_encode($post), $base->getLead()->getId(), $contact->getContact()->getId()]); #7
 
 		} catch (Exception $e)
 		{
