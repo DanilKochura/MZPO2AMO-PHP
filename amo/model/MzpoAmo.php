@@ -48,7 +48,7 @@ class MzpoAmo
 
 	#endregion
 
-	protected AmoCRMApiClient $apiClient;
+	public AmoCRMApiClient $apiClient;
 
 
 	public function __construct($type = self::SUBDOMAIN)

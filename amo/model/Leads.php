@@ -495,14 +495,19 @@ class Leads extends MzpoAmo
 	 */
 	public static function getCorpResponsible($responsible)
 	{
-		if($responsible == 8993890)
-		{
-			return 8603416;
-		} else if($responsible == 8993898 )
-			{
-				return 8628763;
-			}
-		else return false;
+//		if($responsible == 8993890)
+//		{
+//			return 8603416;
+//		} elseif($responsible == 8993898 )
+//			{
+//				return 8628763;
+//			}
+//		elseif($responsible == 5761144)
+//		{
+//			return 2375131;
+//		}
+//		else return false;
+		return 2375131;
 	}
 
 	/**

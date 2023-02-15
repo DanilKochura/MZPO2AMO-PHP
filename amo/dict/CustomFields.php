@@ -41,6 +41,9 @@ interface CustomFields
 	public const CORP_MAN = [761425];
 
 	public const CLIENT_1C = [710429];
+
+
+	public const START_STUDY = 643199;
 	public const CORP_FIELDS = [
 		self::SITE, self::TYPE, self::ROISTAT, self::PAGE, self::RET_ID
 	];
