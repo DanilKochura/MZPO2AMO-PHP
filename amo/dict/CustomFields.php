@@ -42,8 +42,18 @@ interface CustomFields
 
 	public const CLIENT_1C = [710429];
 
+	public const STUDY_FORM_RET = [643207];
+	public const STUDY_TYPE = [644763];
 
-	public const START_STUDY = 643199;
+	public const START_STUDY = [643199];
+	public const END_STUDY =[643201];
+	public const EXAM_DATE =[644915];
+
+	public const OFICIAL_NAME = [645965];
+
+	public const PREPODAVATEL = [730623];
+	public const AUDITORY = [730625];
+
 	public const CORP_FIELDS = [
 		self::SITE, self::TYPE, self::ROISTAT, self::PAGE, self::RET_ID
 	];
