@@ -266,6 +266,23 @@ class Leads extends MzpoAmo
 		return null;
 	}
 
+
+	public function getCF($id)
+	{
+		try {
+			$customFields = $this->lead->getCustomFieldsValues();
+
+			//Получим значение поля по его ID
+			if (!empty($customFields)) {
+				return $customFields->getBy('fieldId', $id);
+			}
+		} catch (Exception $e)
+		{
+			Log::writeError(Log::LEAD, $e);
+		}
+		return null;
+	}
+
 	/**
 	 * Заполнение одного поля заявки по его id
 	 * @param $id
@@ -430,6 +447,8 @@ class Leads extends MzpoAmo
 		}
 		return null;
 	}
+
+
 
 	/**
 	 * Удаление тега сделаки по id

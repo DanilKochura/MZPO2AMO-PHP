@@ -32,6 +32,7 @@ require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/EventsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
 
+
 try {
 	#region создание соединения и слушателя очереди
 	$connection = new AMQPStreamConnection(QueueService::HOST, QueueService::PORT, QueueService::USER, QueueService::PASSWORD, QueueService::VHOST);
@@ -192,6 +193,7 @@ try {
 			{
 				#region
 				$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+
 				Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 
 				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
@@ -264,11 +266,20 @@ try {
 		elseif ($method == 'corp2ret_fail')
 		{
 			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+			if($id==30547779 ) //для сброса проблемных сделок
+			{
+				$msg->ack(); die();
+			}
 			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 			$leadCorp = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id);
+			if ($leadCorp->getStatus() != 143)
+			{
+				Log::writeLine(Log::WEBHOOKS, 'Неверный статус!');
+				$msg->ack();
+				die();
+			}
 			$id_ret = $leadCorp->getCFValue(CustomFields::RET_ID[1]);
 			$id_ret1 = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
-
 				if(!$id_ret)
 				{
 					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не найдена!');
@@ -277,8 +288,14 @@ try {
 
 
 			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
+			try {
+				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+			} catch(Exception $e)
+			{
+				$msg->ack();
+				die();
+			}
 
-			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
 			if(!$lead->getLead())
 			{
 				if(!$id_ret1)
@@ -288,21 +305,32 @@ try {
 					die();
 				}
 				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице (по второму полю): '.$id_ret);
-				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+				try {
+					$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+				} catch(Exception $e){
+					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не существует!');
+					$msg->ack();
+					die();
+				}
 				if(!$lead->getLead()) {
 					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не существует!');
 					$msg->ack();
 					die();
 				}
-			}
-			if($price = $leadCorp->getPrice())
-			{
-				$lead->setPrice($price);
+
+
+
+				if($price = $leadCorp->getPrice())
+				{
+					$lead->setPrice($price);
+				}
+
+				$lead->setStatus(Statuses::FAIL_CORP_PIPE);
+				$lead->save();
+				Log::writeLine(Log::WEBHOOKS, 'Сделка сохранена!');
 			}
 
-			$lead->setStatus(Statuses::FAIL_CORP_PIPE);
-			$lead->save();
-			Log::writeLine(Log::WEBHOOKS, 'Сделка сохранена!');
+
 
 		}
 		#endregion

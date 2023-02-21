@@ -8,6 +8,8 @@ use AmoCRM\Collections\LinksCollection;
 use AmoCRM\Exceptions\AmoCRMApiErrorResponseException;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Filters\ContactsFilter;
+use AmoCRM\Filters\NotesFilter;
+use AmoCRM\Helpers\EntityTypesInterface;
 use AmoCRM\Models\ContactModel;
 use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
@@ -15,6 +17,7 @@ use AmoCRM\Models\CustomFieldsValues\ValueCollections\MultitextCustomFieldValueC
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\MultitextCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
+use AmoCRM\Models\Factories\NoteFactory;
 use AmoCRM\Models\LeadModel;
 use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
 use Exception;
@@ -22,12 +25,12 @@ use Exception;
 class Contact extends MzpoAmo
 {
 	private ContactModel $contact;
-	private bool $new = true;
+	private bool $new = false;
 	public string $name;
 	public string $phone;
 	public string $email;
 	public string $surname;
-	private string $pipeline;
+	private ?string $pipeline;
 	private ?int $mergeId = null;
 
 	public function __construct($array, $amo, $id = null)
@@ -210,7 +213,7 @@ class Contact extends MzpoAmo
 		{
 			die($e->getValidationErrors());
 		}
-		$this->new = false;
+		$this->new = true;
 		#endregion
 		Log::writeLine(Log::CONTACT, 'Создан новый контакт '.$contact->getId().'-'.$this->type);
 		return $contact;
@@ -394,8 +397,32 @@ class Contact extends MzpoAmo
 		$contactCorp = new self($array, MzpoAmo::SUBDOMAIN_CORP);
 		$contactCorp->setCreatedByCorp();
 		$contactCorp->setUpdatedByCorp();
-		$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));
-		$contactCorp->save();
+			if($contactCorp->isNew())
+			{
+				$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));
+			}
+			$contactCorp->save();
+		try {
+			$leadNotesService = $contact->apiClient->notes(EntityTypesInterface::CONTACTS);
+			$notesCollection = $leadNotesService->getByParentId($contact->getContact()->getId(), (new NotesFilter())->setNoteTypes([NoteFactory::NOTE_TYPE_CODE_CALL_IN, NoteFactory::NOTE_TYPE_CODE_CALL_OUT])->setLimit(100));
+		} catch (AmoCRMApiException $e) {
+			Log::writeLine(Log::WEBHOOKS, 'Не удалось перенести звонки');
+		}
+
+		try {
+			foreach ($notesCollection as $n)
+			{
+				$n->setEntityId($contactCorp->getContact()->getId());
+				$n->setResponsibleUserId(Leads::getCorpResponsible($contactCorp->getContact()->getResponsibleUserId()));
+				$n->setCreatedBy(9081002);
+				$n->setUpdatedBy(9081002);
+			}
+			$leadNotesService = $contactCorp->apiClient->notes(EntityTypesInterface::CONTACTS);
+			$leadNotesService->add($notesCollection);
+		} catch (\AmoCRM\Exceptions\AmoCRMApiErrorResponseException $e)
+		{
+			Log::writeLine(Log::WEBHOOKS, 'Не удалось перенести звонки');
+		}
 		return $contactCorp;
 	}
 
