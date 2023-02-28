@@ -45,7 +45,11 @@ $resps = [
 	'Митрофанова Наталия' => Users::MITROFANOVA
 ];
 
-
+$orgs = [
+	'НОЧУ ДПО МЦПО' => 'МЦПО',
+	'ООО «МЦПО»' => 'ООО «МЦПО»',
+	'ООО «МИРК»' =>'ООО «МИРК»'
+];
 
 
 if($_POST)
@@ -61,7 +65,7 @@ if(!$_POST['lead_id']) {
 
 	$_POST['title'] = $_POST['group'] . ' ' . date('d.m', strtotime($_POST['date_start'])) . ' ' . explode(' ', $_POST['teacher'])[0];
 
-	$_POST['resp'] = $resps[$_POST['responsible_user']];
+	$_POST['resp'] = $resps[$_POST['responsible_user']] ?: Users::PLATOVA;
 
 
 	$lead = new \AmoCRM\Models\LeadModel();
@@ -74,7 +78,7 @@ if(!$_POST['lead_id']) {
 				(new DateCustomFieldValueCollection())
 					->add(
 						(new DateTimeCustomFieldValueModel())
-							->setValue($_POST['date_start'])
+							->setValue(Carbon::parse($_POST['date_start']))
 					)
 			)
 	)->add(
@@ -84,7 +88,7 @@ if(!$_POST['lead_id']) {
 				(new DateCustomFieldValueCollection())
 					->add(
 						(new DateTimeCustomFieldValueModel())
-							->setValue($_POST['date_end'])
+							->setValue(Carbon::parse($_POST['date_end']))
 					)
 			)
 	)->add(
@@ -94,7 +98,7 @@ if(!$_POST['lead_id']) {
 				(new DateCustomFieldValueCollection())
 					->add(
 						(new DateTimeCustomFieldValueModel())
-							->setValue($_POST['date_exam'])
+							->setValue(Carbon::parse($_POST['date_exam']))
 					)
 			)
 	)->add(
@@ -104,7 +108,7 @@ if(!$_POST['lead_id']) {
 				(new SelectCustomFieldValueCollection())
 					->add(
 						(new SelectCustomFieldValueModel())
-							->setValue($_POST['organization'])
+							->setValue($orgs[$_POST['organization']])
 					)
 			)
 	)->add(
