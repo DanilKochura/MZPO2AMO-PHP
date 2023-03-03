@@ -37,6 +37,7 @@ require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/BaseReport.php';
 require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/EventsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
+#region Словарь пользователей
 $resps = [
 	'Афанасьева Ксения' => Users::AFANASYYEVA,
 	'Платова Юлия' => Users::PLATOVA,
@@ -44,31 +45,33 @@ $resps = [
 	'Федько Мария' => Users::FEDKO,
 	'Митрофанова Наталия' => Users::MITROFANOVA
 ];
+#endregion
 
+#region Словарь организаций
 $orgs = [
 	'НОЧУ ДПО МЦПО' => 'МЦПО',
 	'ООО «МЦПО»' => 'ООО «МЦПО»',
 	'ООО «МИРК»' =>'ООО «МИРК»'
 ];
+#endregion
 
-
-if($_POST)
-{
-
-}
 $_POST=json_decode(file_get_contents('php://input'), true);
+file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
 $mzpo = new MzpoAmo();
+
+#region Новая заявка
 if(!$_POST['lead_id']) {
 
 
 	$lead = [];
-
+	#region Парсинг запроса
 	$_POST['title'] = $_POST['group'] . ' ' . date('d.m', strtotime($_POST['date_start'])) . ' ' . explode(' ', $_POST['teacher'])[0];
-
 	$_POST['resp'] = $resps[$_POST['responsible_user']] ?: Users::PLATOVA;
-
+	#endregion
 
 	$lead = new \AmoCRM\Models\LeadModel();
+
+	#region Заполнение заявки
 	$lead->setName($_POST['title']);
 	$cfvs = new \AmoCRM\Collections\CustomFieldsValuesCollection();
 	$cfvs->add(
@@ -145,9 +148,13 @@ if(!$_POST['lead_id']) {
 
 	$lead->setResponsibleUserId($_POST['resp']);
 	$lead->setCustomFieldsValues($cfvs);
-	$lead->setPipelineId(Pipelines::TEST_DANIL);
+	$lead->setPipelineId(Pipelines::STUDY_OCHNO);
+	#endregion
 	$lead = $mzpo->apiClient->leads()->addOne($lead);
-} else
+}
+#endregion
+#region Обновление существужющей заявки (только контакты)
+else
 {
 	$lead = $mzpo->apiClient->leads()->getOne($_POST['lead_id'], [\AmoCRM\Models\LeadModel::CONTACTS]);
 //	$lf = new \AmoCRM\Filters\LinksFilter();
@@ -160,6 +167,9 @@ if(!$_POST['lead_id']) {
 
 
 }
+#endregion
+
+#region Привязка контактов
 $lc = new \AmoCRM\Collections\LinksCollection();
 $ar = [];
 foreach ($_POST['students'] as $student)
@@ -241,7 +251,10 @@ foreach ($_POST['students'] as $student)
 
 }
 $mzpo->apiClient->leads()->link($lead, $lc);
-echo $lead->getId();
+#endregion
+
+
+echo $lead->getId(); //возврат Lead_id
 
 
 
