@@ -22,6 +22,8 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use reports\EventsReport;
 use services\QueueService;
+use services\UserService;
+
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/model/MzpoAmo.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/model/Leads.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/model/Contact.php';
@@ -30,6 +32,8 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/amo/model/MzposApiEvent.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/CustomFields.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Pipelines.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Tags.php';
+require $_SERVER['DOCUMENT_ROOT'].'/amo/services/UserService.php';
+
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Statuses.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/dict/Users.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/amo/services/QueueService.php';
@@ -56,7 +60,7 @@ $orgs = [
 #endregion
 
 $_POST=json_decode(file_get_contents('php://input'), true);
-file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+file_put_contents(__DIR__.'/0.txt', json_encode($_POST), FILE_APPEND);
 $mzpo = new MzpoAmo();
 
 #region Новая заявка
@@ -144,9 +148,14 @@ if(!$_POST['lead_id']) {
 			->setFieldId(CustomFields::AUDITORY[0])
 			->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection())
 				->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel())->setValue($_POST['auditory'])))
-	);
-
-	$lead->setResponsibleUserId($_POST['resp']);
+	)->add(
+		(new \AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel())
+			->setFieldId(CustomFields::TYPE[0])
+			->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection())
+				->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel())->setValue($_POST['title']))));
+	$userService  = new UserService();
+	$resp = $userService->getUser($_POST['responsible_user']) ?: Users::PLATOVA;
+	$lead->setResponsibleUserId($resp);
 	$lead->setCustomFieldsValues($cfvs);
 	$lead->setPipelineId(Pipelines::STUDY_OCHNO);
 	#endregion
@@ -156,7 +165,7 @@ if(!$_POST['lead_id']) {
 #region Обновление существужющей заявки (только контакты)
 else
 {
-	$lead = $mzpo->apiClient->leads()->getOne($_POST['lead_id'], [\AmoCRM\Models\LeadModel::CONTACTS]);
+
 //	$lf = new \AmoCRM\Filters\LinksFilter();
 //	$links = $lead->getContacts();
 //	foreach ($links as $linc)
@@ -195,11 +204,12 @@ foreach ($_POST['students'] as $student)
 		}
 		catch(Exception $e)
 		{
-			die($e);
+
 		}
 
 		if($res)
 		{
+			$res->setUpdatedBy(Users::PLATOVA);
 			$ar[] = $res;
 			$lc->add($res);
 			continue;
@@ -220,6 +230,7 @@ foreach ($_POST['students'] as $student)
 
 		if ($res)
 		{
+
 			$ar[] = $res;
 			$lc->add($res->first());
 			continue;
@@ -228,10 +239,7 @@ foreach ($_POST['students'] as $student)
 
 	$cf = new \AmoCRM\Filters\ContactsFilter();
 	$phone = $student['phone'];
-	$phone = ltrim($phone, '8');
-	$phone = ltrim($phone, '7');
-	$phone = ltrim($phone, '+7');
-	$phone = preg_replace('~[\ |\-]~', '', $phone);
+	$phone = safePhone($phone);
 	$cf->setQuery($phone);
 	$res = null;
 	try {
@@ -243,6 +251,7 @@ foreach ($_POST['students'] as $student)
 	}
 	if($res)
 	{
+
 		$ar[] = $res;
 		$lc->add($res->first());
 		continue;
@@ -250,7 +259,16 @@ foreach ($_POST['students'] as $student)
 
 
 }
-$mzpo->apiClient->leads()->link($lead, $lc);
+try {
+	$mzpo->apiClient->leads()->link($lead, $lc);
+} catch (\AmoCRM\Exceptions\AmoCRMApiErrorResponseException $e)
+{
+	dd($e);
+	dd($e->getValidationErrors());
+} catch (Exception $e)
+{
+	dd($e);
+}
 #endregion
 
 

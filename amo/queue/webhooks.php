@@ -239,8 +239,10 @@ try {
 			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
 
 			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+
 			if(!$lead->getLead())
 			{
+
 				$id_ret = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
 				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице (по второму полю): '.$id_ret);
 				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
@@ -250,10 +252,13 @@ try {
 					die();
 				}
 			}
+
 			if($price = $leadCorp->getPrice())
 			{
 				$lead->setPrice($price);
 			}
+
+
 			$lead->setStatus(Statuses::SUCCESS_CORP_PIPE);
 			$lead->save();
 			Log::writeLine(Log::WEBHOOKS, 'Сделка сохранена!');

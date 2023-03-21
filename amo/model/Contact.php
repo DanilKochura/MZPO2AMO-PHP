@@ -399,21 +399,32 @@ class Contact extends MzpoAmo
 		$contactCorp->setUpdatedByCorp();
 			if($contactCorp->isNew())
 			{
-				$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));
+
 			}
+		$contactCorp->contact->setResponsibleUserId(Leads::getCorpResponsible($contact->contact->getResponsibleUserId()));	
 			$contactCorp->save();
 		try {
 			$leadNotesService = $contact->apiClient->notes(EntityTypesInterface::CONTACTS);
 			$notesCollection = $leadNotesService->getByParentId($contact->getContact()->getId(), (new NotesFilter())->setNoteTypes([NoteFactory::NOTE_TYPE_CODE_CALL_IN, NoteFactory::NOTE_TYPE_CODE_CALL_OUT])->setLimit(100));
 				foreach ($notesCollection as $n)
 				{
+					if(!$n->link and isset($n->callStatus))
+					{
+						$n->link = 'https://mzpo-s.ru';
+					}
 					$n->setEntityId($contactCorp->getContact()->getId());
 					$n->setResponsibleUserId(Leads::getCorpResponsible($contactCorp->getContact()->getResponsibleUserId()));
 					$n->setCreatedBy(9081002);
 					$n->setUpdatedBy(9081002);
+					if(!$n->callStatus)
+					{
+							$n->callStatus = 4;
+					}
 				}
 				$leadNotesService = $contactCorp->apiClient->notes(EntityTypesInterface::CONTACTS);
 				$leadNotesService->add($notesCollection);
+
+
 		} catch (AmoCRMApiException $e) {
 			Log::writeLine(Log::WEBHOOKS, 'Не удалось перенести звонки');
 			Log::writeError(Log::WEBHOOKS, $e);

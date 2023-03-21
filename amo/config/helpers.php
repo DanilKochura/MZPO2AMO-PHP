@@ -93,3 +93,14 @@ function dd($array)
 	exit;
 
 }
+
+function safePhone($phone)
+{
+	$tel = $phone;
+	$tel = ltrim($tel,'+');
+	$tel = ltrim($tel, '8');
+	$tel = ltrim($tel, '7');
+
+	$tel = preg_replace('~[\( \) \-]+~', '', $tel);
+	return $tel;
+}
