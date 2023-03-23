@@ -38,7 +38,7 @@ $lf->setLimit(200);
 $lf->setPage($i);
 $lf->setPipelineIds([\MzpoAmo\Pipelines::NEW])->setStatuses([
 	[
-		'status_id' => 142,
+		'status_id' => 47317666,
 		'pipeline_id' => \MzpoAmo\Pipelines::NEW
 	]
 ]);
@@ -84,10 +84,10 @@ $avg =  $price/$co;
 			padding: 0;
 			margin: 0;
 			font-family: 'PT Sans';
-			color: #2E3640;
+			color: white;
 		}
 		a, a:active, a:hover, a:visited {
-			color: #2E3640;
+			color: white;
 			text-decoration: none;
 		}
 		.cell-wrapper {

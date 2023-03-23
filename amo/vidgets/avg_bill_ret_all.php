@@ -1,5 +1,8 @@
 
 <?php
+
+error_reporting(0);
+
 use AmoCRM\Client\AmoCRMApiClient;
 use AmoCRM\Filters\BaseRangeFilter;
 use AmoCRM\Filters\LeadsFilter;
@@ -28,8 +31,6 @@ $apiClient->setAccessToken($accessToken)
 				]
 			);
 		});
-
-
 $i = 1;
 $lf = new LeadsFilter();
 $lf->setLimit(200);
@@ -50,17 +51,147 @@ $price = 0;
 $co = 0;
 do{
 	$lf->setPage($i++);
-	$tt = $apiClient->leads()->get($lf);
-	foreach ($tt as $t)
+	try {
+		$tt = $apiClient->leads()->get($lf);
+		foreach ($tt as $t)
+		{
+			$price+=$t->getPrice();
+		}
+		$amo = $tt->count();
+	} catch (Exception $e)
 	{
-		$price+=$t->getPrice();
+		$amo = 0;
 	}
-	$amo = $tt->count();
+
 
 	$co+= $amo;
 }while($amo == 200);
-$avg =  $price/$co;
+$avg[] = $price/$co;
+$users = [
+	'Гребенникова' => 2375107,
+	'Белоусова' => 2375143,
+	'Федорова' => 3813670,
+	'Лукьянова' => 6102562,
+	'Матюк' => 6158035,
+	'Исмайлова' => 6929800,
+	'Сиренко'=>7771945,
 
+
+	];
+
+$data = [];
+$avg = [];
+
+
+
+//dd($data);
+
+if (file_exists('avg_ret.json')) {
+	$one_day = 2 * 60 * 60; //часы * мин * сек = 86400 c
+	$file_created = filemtime('avg_ret.json');
+	if (time() - $file_created > $one_day) { // || true
+
+		foreach ($users as $name=>$id)
+		{
+			$i = 1;
+			$lf = new LeadsFilter();
+			$lf->setLimit(200);
+			$lf->setPage($i);
+			$lf->setPipelineIds([\MzpoAmo\Pipelines::RETAIL])->setStatuses([
+				[
+					'status_id' => 142,
+					'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
+				]
+			]);
+			$date = date('Y-m-d H-i-s');
+			$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
+			$lf->setCreatedAt((new BaseRangeFilter())
+				->setFrom(strtotime($date1))
+				->setTo(strtotime($date)))->setResponsibleUserId($id);
+			$price = 0;
+
+			$co = 0;
+			do{
+				$lf->setPage($i++);
+				try {
+					$tt = $apiClient->leads()->get($lf);
+					foreach ($tt as $t)
+					{
+						$price+=$t->getPrice();
+					}
+					$amo = $tt->count();
+				} catch (Exception $e)
+				{
+					$amo = 0;
+				}
+
+
+				$co+= $amo;
+			}while($amo == 200);
+			$avg[] = $co != 0 ? round($price/$co, 2) : 0;
+			$data[] = [
+				'name' => $name,
+				'avg' => round($price/$co, 2) ?: 0,
+				'co' => $co
+			];
+		}
+		file_put_contents(__DIR__.'/avg_ret.json', json_encode($avg));
+
+	}
+	else
+	{
+		$avg = json_decode(file_get_contents(__DIR__.'/avg_ret.json'));
+	}
+} else
+{
+	foreach ($users as $name=>$id)
+	{
+		$i = 1;
+		$lf = new LeadsFilter();
+		$lf->setLimit(200);
+		$lf->setPage($i);
+		$lf->setPipelineIds([\MzpoAmo\Pipelines::RETAIL])->setStatuses([
+			[
+				'status_id' => 142,
+				'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
+			]
+		]);
+		$date = date('Y-m-d H-i-s');
+		$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
+		$lf->setCreatedAt((new BaseRangeFilter())
+			->setFrom(strtotime($date1))
+			->setTo(strtotime($date)))->setResponsibleUserId($id);
+		$price = 0;
+
+		$co = 0;
+		do{
+			$lf->setPage($i++);
+			try {
+				$tt = $apiClient->leads()->get($lf);
+				foreach ($tt as $t)
+				{
+					$price+=$t->getPrice();
+				}
+				$amo = $tt->count();
+			} catch (Exception $e)
+			{
+				$amo = 0;
+			}
+
+
+			$co+= $amo;
+		}while($amo == 200);
+		$avg[] = $co != 0 ? round($price/$co, 2) : 0;
+		$data[] = [
+			'name' => $name,
+			'avg' => round($price/$co, 2) ?: 0,
+			'co' => $co
+		];
+	}
+
+	file_put_contents(__DIR__.'/avg_ret.json', json_encode($avg));
+
+}
 
 ?>
 <!DOCTYPE html>
@@ -69,7 +200,8 @@ $avg =  $price/$co;
 	<title>amoCRM Test Dashboard Widget</title>
 	<link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:400,300&subset=latin,cyrillic-ext">
 	<link rel="stylesheet" type="text/css" href='//fonts.googleapis.com/css?family=PT+Sans:400,700&subset=latin,cyrillic-ext'>
-
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
 	<style type="text/css">
 		* {
 			-webkit-box-sizing: border-box;
@@ -169,19 +301,97 @@ $avg =  $price/$co;
 	</style>
 </head>
 <body>
-<div class="cell-wrapper text-center">
-	<!-- Название виджета -->
-	<div class="cell-wrapper__caption text-22">Средний чек</div>
+<canvas id="densityChart" width="600" height="400" style="width: 600px; height: 600px"></canvas>
+<script>
 
-	<!-- Главная цифра в виджете -->
-	<div class="cell-wrapper__data">
-		<div class="cell-wrapper__bottom <?=$avg > 11000 ? 'green' : 'red'?>" title="500"><?=round($avg, 1)?> руб</div>
-	</div>
-	<!-- Футер виджета, например, сравнение с предыдущим периодом -->
-	<!-- Используйте классы .green и .red для того, чтобы показать успешный период или нет -->
-	<div class="" title="80%">
-		<a href=""><?=$co?> сделок</a>
-	</div>
-</div>
+	Chart.register(ChartDataLabels);
+	const ctx = document.getElementById('densityChart');
+
+	const labels = ["<?=implode('","',array_keys($users))?>"]
+	const data = {
+		labels: labels,
+		datasets: [{
+			axis: 'y',
+			label: 'My First Dataset',
+			data: [<?=implode(',', $avg)?>],
+			fill: false,
+			backgroundColor: [
+				'rgba(255, 99, 132, 0.2)',
+				'rgba(255, 159, 64, 0.2)',
+				'rgba(255, 205, 86, 0.2)',
+				'rgba(75, 192, 192, 0.2)',
+				'rgba(54, 162, 235, 0.2)',
+				'rgba(153, 102, 255, 0.2)',
+				'rgba(201, 203, 207, 0.2)'
+			],
+			borderColor: [
+				'rgb(255, 99, 132)',
+				'rgb(255, 159, 64)',
+				'rgb(255, 205, 86)',
+				'rgb(75, 192, 192)',
+				'rgb(54, 162, 235)',
+				'rgb(153, 102, 255)',
+				'rgb(201, 203, 207)'
+			],
+			borderWidth: 1
+		}]
+	};
+
+	const config = {
+		type: 'bar',
+		data,
+		plugins: [ChartDataLabels],
+		options: {
+			plugins: {
+				legend: {
+					display: false
+				},
+				tooltips: {
+					enabled: false
+				},
+				datalabels: {
+					formatter: Math.round,
+					font: {
+						weight: 'bold',
+						size: 14
+					}
+				}
+			},
+			indexAxis: 'y',
+
+			hover: {
+				animationDuration: 0
+			},
+			animation: {
+				duration: 500,
+				easing: "easeOutQuart",
+				onComplete: function () {
+					var ctx = this.chart.ctx;
+					ctx.font = Chart.helpers.fontString(Chart.defaults.global.defaultFontFamily, 'normal', Chart.defaults.global.defaultFontFamily);
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'bottom';
+					this.data.datasets.forEach(function (dataset) {
+						for (var i = 0; i < dataset.data.length; i++) {
+							var model = dataset._meta[Object.keys(dataset._meta)[0]].data[i]._model,
+								scale_max = dataset._meta[Object.keys(dataset._meta)[0]].data[i]._yScale.maxHeight;
+							ctx.fillStyle = '#444';
+							var y_pos = model.y - 5;
+							// Make sure data value does not get overflown and hidden
+							// when the bar's value is too close to max value of scale
+							// Note: The y value is reverse, it counts from top down
+							if ((scale_max - model.y) / scale_max >= 0.93)
+								y_pos = model.y + 20;
+							ctx.fillText(dataset.data[i], model.x, y_pos);
+						}
+					});
+				}
+			}
+		}
+	};
+	new Chart(ctx, config);
+
+</script>
+
+<!---->
 </body>
 </html>

@@ -28,59 +28,9 @@ $apiClient->setAccessToken($accessToken)
 			);
 		});
 
+file_put_contents(__DIR__.'/0.txt', print_r($_POST, 1), FILE_APPEND);
+file_put_contents(__DIR__.'/0.txt', print_r($_GET, 1), FILE_APPEND);
 
-
-$i = 1;
-$lf = new LeadsFilter();
-$lf->setLimit(200);
-$lf->setPage($i);
-$lf->setPipelineIds([\MzpoAmo\Pipelines::RETAIL])->setStatuses([
-	[
-		'status_id' => 143,
-		'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
-	]
-]);
-$date = date('Y-m-d H-i-s');
-$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
-$lf->setCreatedAt((new BaseRangeFilter())
-	->setFrom(strtotime($date1))
-	->setTo(strtotime($date)));
-$co = 0;
-do{
-	$lf->setPage($i++);
-	$tt = $apiClient->leads()->get($lf);
-	$amo = $tt->count();
-
-	$co+= $amo;
-}while($amo == 200);
-
-$nope = $co;
-
-$i = 1;
-$lf = new LeadsFilter();
-$lf->setLimit(200);
-$lf->setPage($i);
-$lf->setPipelineIds([\MzpoAmo\Pipelines::RETAIL])->setStatuses([
-	[
-		'status_id' => 142,
-		'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
-	]
-]);
-$date = date('Y-m-d H-i-s');
-$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
-$lf->setCreatedAt((new BaseRangeFilter())
-	->setFrom(strtotime($date1))
-	->setTo(strtotime($date)));
-$co = 0;
-do{
-	$lf->setPage($i++);
-	$tt = $apiClient->leads()->get($lf);
-	$amo = $tt->count();
-
-	$co+= $amo;
-}while($amo == 200);
-
-$exp = $co/($nope+$co)*100;
 
 
 ?>
