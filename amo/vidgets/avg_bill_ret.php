@@ -40,8 +40,8 @@ $lf->setPipelineIds([\MzpoAmo\Pipelines::RETAIL])->setStatuses([
 		'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
 	]
 ]);
-$date = date('Y-m-d H-i-s');
-$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
+$date =  $_REQUEST['date_to'] != 'false' ?  $_REQUEST['date_to'] : date('Y-m-d');
+$date1 =  $_REQUEST['date_from'] != 'false' ? $_REQUEST['date_from'] : date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
 $lf->setCreatedAt((new BaseRangeFilter())
 	->setFrom(strtotime($date1))
 	->setTo(strtotime($date)));

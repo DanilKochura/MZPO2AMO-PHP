@@ -38,6 +38,8 @@ $users = [
 	'Матюк' => 6158035,
 	'Исмайлова' => 6929800,
 	'Сиренко'=>7771945,
+	'Кубрина'=>8628637,
+	'Ревина'=>8688502,
 
 
 	];
@@ -46,9 +48,11 @@ $data = [];
 $avg = [];
 
 
-if (file_exists('konv_ret.json')) {
+$date =  $_REQUEST['date_to'] != 'false' ?  $_REQUEST['date_to'] : date('Y-m-d');
+$date1 =  $_REQUEST['date_from'] != 'false' ? $_REQUEST['date_from'] : date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01'));
+if (file_exists('konv_ret_'.$date1.'-'.$date.'.json')) {
 	$one_day = 2 * 60 * 60; //часы * мин * сек = 86400 c
-	$file_created = filemtime('konv_ret.json');
+	$file_created = filemtime('konv_ret_'.$date1.'-'.$date.'.json');
 	if (time() - $file_created > $one_day) { // || true
 
 		foreach ($users as $name=>$id)
@@ -65,8 +69,6 @@ if (file_exists('konv_ret.json')) {
 			]);
 
 
-			$date = date('Y-m-d H-i-s');
-			$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
 			$lf->setCreatedAt((new BaseRangeFilter())
 				->setFrom(strtotime($date1))
 				->setTo(strtotime($date)))->setResponsibleUserId($id);
@@ -95,8 +97,6 @@ if (file_exists('konv_ret.json')) {
 					'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
 				]
 			]);
-			$date = date('Y-m-d H-i-s');
-			$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
 			$lf->setCreatedAt((new BaseRangeFilter())
 				->setFrom(strtotime($date1))
 				->setTo(strtotime($date)))->setResponsibleUserId($id);
@@ -124,12 +124,12 @@ if (file_exists('konv_ret.json')) {
 				'nope' => $nope
 			];
 		}
-		file_put_contents(__DIR__.'/konv_ret.json', json_encode($avg));
+//		file_put_contents(__DIR__.'/konv_ret.json', json_encode($avg));
 
 	}
 	else
 	{
-		$avg = json_decode(file_get_contents(__DIR__.'/konv_ret.json'));
+		$avg = json_decode(file_get_contents(__DIR__.'/konv_ret_'.$date1.'-'.$date.'.json'));
 	}
 } else
 {
@@ -147,8 +147,7 @@ if (file_exists('konv_ret.json')) {
 		]);
 
 
-		$date = date('Y-m-d H-i-s');
-		$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
+
 		$lf->setCreatedAt((new BaseRangeFilter())
 			->setFrom(strtotime($date1))
 			->setTo(strtotime($date)))->setResponsibleUserId($id);
@@ -177,8 +176,8 @@ if (file_exists('konv_ret.json')) {
 				'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
 			]
 		]);
-		$date = date('Y-m-d H-i-s');
-		$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
+
+
 		$lf->setCreatedAt((new BaseRangeFilter())
 			->setFrom(strtotime($date1))
 			->setTo(strtotime($date)))->setResponsibleUserId($id);
@@ -206,7 +205,7 @@ if (file_exists('konv_ret.json')) {
 		];
 	}
 
-	file_put_contents(__DIR__.'/konv_ret.json', json_encode($avg));
+	file_put_contents(__DIR__.'/konv_ret_'.$date1.'-'.$date.'.json', json_encode($avg));
 
 }
 

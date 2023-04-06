@@ -31,42 +31,7 @@ $apiClient->setAccessToken($accessToken)
 				]
 			);
 		});
-$i = 1;
-$lf = new LeadsFilter();
-$lf->setLimit(200);
-$lf->setPage($i);
-$lf->setPipelineIds([\MzpoAmo\Pipelines::RETAIL])->setStatuses([
-	[
-		'status_id' => 142,
-		'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
-	]
-]);
-$date = date('Y-m-d H-i-s');
-$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
-$lf->setCreatedAt((new BaseRangeFilter())
-	->setFrom(strtotime($date1))
-	->setTo(strtotime($date)));
-$price = 0;
 
-$co = 0;
-do{
-	$lf->setPage($i++);
-	try {
-		$tt = $apiClient->leads()->get($lf);
-		foreach ($tt as $t)
-		{
-			$price+=$t->getPrice();
-		}
-		$amo = $tt->count();
-	} catch (Exception $e)
-	{
-		$amo = 0;
-	}
-
-
-	$co+= $amo;
-}while($amo == 200);
-$avg[] = $price/$co;
 $users = [
 	'Гребенникова' => 2375107,
 	'Белоусова' => 2375143,
@@ -75,20 +40,23 @@ $users = [
 	'Матюк' => 6158035,
 	'Исмайлова' => 6929800,
 	'Сиренко'=>7771945,
+	'Кубрина'=>8628637,
+	'Ревина'=>8688502,
 
 
 	];
 
 $data = [];
 $avg = [];
-
+$date =  $_REQUEST['date_to'] != 'false' ?  $_REQUEST['date_to'] : date('Y-m-d');
+$date1 =  $_REQUEST['date_from'] != 'false' ? $_REQUEST['date_from'] : date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
 
 
 //dd($data);
 
-if (file_exists('avg_ret.json')) {
+if (file_exists('avg_ret_'.$date1.'-'.$date.'.json')) {
 	$one_day = 2 * 60 * 60; //часы * мин * сек = 86400 c
-	$file_created = filemtime('avg_ret.json');
+	$file_created = filemtime('avg_ret_'.$date1.'-'.$date.'.json');
 	if (time() - $file_created > $one_day) { // || true
 
 		foreach ($users as $name=>$id)
@@ -103,8 +71,6 @@ if (file_exists('avg_ret.json')) {
 					'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
 				]
 			]);
-			$date = date('Y-m-d H-i-s');
-			$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
 			$lf->setCreatedAt((new BaseRangeFilter())
 				->setFrom(strtotime($date1))
 				->setTo(strtotime($date)))->setResponsibleUserId($id);
@@ -135,12 +101,12 @@ if (file_exists('avg_ret.json')) {
 				'co' => $co
 			];
 		}
-		file_put_contents(__DIR__.'/avg_ret.json', json_encode($avg));
+//		file_put_contents(__DIR__.'/avg_ret.json', json_encode($avg));
 
 	}
 	else
 	{
-		$avg = json_decode(file_get_contents(__DIR__.'/avg_ret.json'));
+		$avg = json_decode(file_get_contents(__DIR__.'/avg_ret_'.$date1.'-'.$date.'.json'));
 	}
 } else
 {
@@ -156,8 +122,9 @@ if (file_exists('avg_ret.json')) {
 				'pipeline_id' => \MzpoAmo\Pipelines::RETAIL
 			]
 		]);
-		$date = date('Y-m-d H-i-s');
-		$date1 = date('Y-m-d', strtotime(date("Y").'-'.date("m").'-01 00:00:00'));
+
+
+
 		$lf->setCreatedAt((new BaseRangeFilter())
 			->setFrom(strtotime($date1))
 			->setTo(strtotime($date)))->setResponsibleUserId($id);
@@ -189,7 +156,7 @@ if (file_exists('avg_ret.json')) {
 		];
 	}
 
-	file_put_contents(__DIR__.'/avg_ret.json', json_encode($avg));
+	file_put_contents(__DIR__.'/avg_ret_'.$date1.'-'.$date.'.json', json_encode($avg));
 
 }
 
