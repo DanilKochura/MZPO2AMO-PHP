@@ -11,46 +11,41 @@ use AmoCRM\Models\BaseApiModel;
 use AmoCRM\Models\LeadModel;
 use Exception;
 use MzpoAmo\Contact;
+use MzpoAmo\Contact1C;
 use MzpoAmo\CustomFields;
+use MzpoAmo\Lead1C;
 use MzpoAmo\Leads;
 use MzpoAmo\MzpoAmo;
 
-class Integartion1C extends \MzpoAmo\MzpoAmo
+/**
+ * @method EditStudent_POST(Contact1C $client)
+ */
+class Integartion1C
 {
-	public $client_to_1c = [
-		"client_id_1C" => CustomFields::CLIENT_1C[0],
-		"name" => "",
-		"email" => CustomFields::EMAIL[0],
-		"phone" => CustomFields::PHONE[0],
-		"second_phone" => CustomFields::PHONE[0],
-		"dob" => CustomFields::BIRTHDAY[0],
-		"pass_serie" => CustomFields::PASS_SERIE[0],
-		"pass_number" => CustomFields::PASS_NUMBER[0],
-		"pass_dpt_code" => CustomFields::PASS_CODE[0],
-		"snils" => CustomFields::SNILS[0],
-		"address" => CustomFields::PASS_ADDRESS[0]
-	];
 
 	public Request1C $request;
 
-	public function __construct($type = self::SUBDOMAIN)
+	public function __construct()
 	{
-		parent::__construct($type);
 		$this->request = new Request1C();
 	}
 
-	public function syncLead(Leads $lead)
+	public function sendLead(Leads $lead)
 	{
-		$id_1c = $lead->getCFValue(CustomFields::LEAD1C);
-		if($id_1c != null)
+		$lead1c = Lead1C::fromAMO($lead);
+
+		$contact = new Contact([], $lead->getSubdomain(), $lead->getContact());
+
+		if($client = $contact->getCFValue(CustomFields::CLIENT_1C[$lead->getType()]))
 		{
-			return $this->updateLead($lead);
+			$lead1c->client_id_1c = $client;
+		} else
+		{
+			$client = Contact1C::fromAmo($contact);
+			$this->EditStudent_POST($client);
 		}
-		$id = $this->createLead($lead);
-		$lead->newNote('UID сделки в 1с: '.$id);
-		$lead->setCFStringValue(CustomFields::LEAD1C, $id);
-		$lead->save();
-		return $id;
+
+
 	}
 
 	private function updateLead($lead)
@@ -80,21 +75,11 @@ class Integartion1C extends \MzpoAmo\MzpoAmo
 	{
 		#region Заполнение JSON-объекта
 		$json=[];
-		foreach ($this->client_to_1c as $key => $id)
+
+		if($json['dob'])
 		{
-			try {
-				$json[$key] = $contact->getCFValue($id);
-			} catch (Exception $e)
-			{
-				$json[$key] = '';
-			}
+			$json['dob'] = $json['dob']->toDateTimeString();
 		}
-		$json["name"] = $contact->getName();
-		$json['amo_ids'] = [
-			'account_id' =>28395871,
-			'entity_id' => $contact->getId()
-		];
-		$json['dob'] = $json['dob']->toDateTimeString();
 		#endregion
 
 		#region Отправка
@@ -122,6 +107,12 @@ class Integartion1C extends \MzpoAmo\MzpoAmo
 		#endregion
 
 		return $body['client_id_1C'];
+	}
+
+	public function getContact($uid)
+	{
+		$resp = $this->request->request('GET', 'EditStudent?uid='.$uid);
+		return Contact1C::from1C(json_decode($resp->getBody(), true));
 	}
 
 

@@ -61,12 +61,53 @@ ___
 
 [webhooks/index.php](/amo/webhooks/index.php) - точка входа для всех вебхуков amoCRM
 
-[Полный список вебхуков]('https://docs.google.com/spreadsheets/d/1_tFSuXGYM3u9ir7p-5Zw3H83GOVC_kXiy00KH8vuIks/edit#gid=0')
+[Полный список вебхуков](https://docs.google.com/spreadsheets/d/1_tFSuXGYM3u9ir7p-5Zw3H83GOVC_kXiy00KH8vuIks/edit#gid=0)
 
 ___
-## API для 1С
+## Интеграция для 1С
 
-[api/index.php](/amo/api/index.php) - точка входа для всех методов интеграции с 1с
+[api/index.php](/amo/api/index.php) - точка входа для всех методов интеграции с 1с (старое)
+
+В директории [model/1C](/amo/model/1C/) хранятся модели сущностей для интеграции:
++ [Contact1C](/amo/model/1C/Contact1C.php) - Клиент
++ [Lead1C](/amo/model/1C/Lead1C.php) - Заявка на курс
++ [Company1C](/amo/model/1C/Company1C.php) - Контрагент
+
+[Base1CInterface](/amo/model/1C/Base1CInterface.php) - общий интерфейс взаимодействия 1С и АМО
+
+Отправкой данных в 1С занимается класс ``Services\Request1C``. 
+### Метод ``request($type, $method, $data = null)``
+Базовый метод ``request($type, $method, $data = null)`` принимает 3 параметра:
++ ``$type`` - тип запроса (GET, POST и т.д)
++ ``$method`` - метод в 1с (последняя часть URL), например (EditApplication)
++ ``$data`` - тело для POST-запроса, для GET не обрабатывается
+
+Метод возвращает массив с ответом из 1с, либо выбрасывает исключение
+
+```php
+$req = new \services\Request1C();
+$data = $req->request('POST', 'EditApplication', 
+  [
+    'param' => 'value',
+    'param1' => 'value1'
+  ]
+);
+```
+
+### Магические методы
+Также в классе предусмотрены магические методы для упрощенной работы с методом request. 
+
+Структура следующая: название_метода = метод_1с + "_" + тип_запроса
+
+Аргументы: 
++ GET: uid в 1с - строка
++ POST: массив данных/объект
+
+Пример:
+```php
+$req = new \services\Request1C();
+$req->EditApplication_POST($data);
+```
 
 ___
 ## Константы
@@ -84,6 +125,11 @@ ___
 + [БД](/amo/config/db.php) - класс для подключения и работы с БД
 + [Helpers](/amo/config/helpers.php) - вспомогательные методы для сохранения и получения токена авторизации из базы
 + [GetToken](/amo/config/getToken.php) - скрипт из примеров к документации библиотеки для первичного обмена ключа доступа на токены. Используется 1 раз - при регистрации интеграции и первом подключении к амо, оставлен как пример на всякий случай
+
+___
+## Виджеты
+
+Папка [vidgets](/amo/vidgets) содержит страницы виджетов для рабочего стола амо.
 
 ___
 

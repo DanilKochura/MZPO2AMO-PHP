@@ -19,6 +19,8 @@ use AmoCRM\Models\CustomFieldsValues\ValueModels\MultitextCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
 use AmoCRM\Models\Factories\NoteFactory;
 use AmoCRM\Models\LeadModel;
+use AmoCRM\Models\NoteModel;
+use AmoCRM\Models\NoteType\CommonNote;
 use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
 use Exception;
 
@@ -31,6 +33,7 @@ class Contact extends MzpoAmo
 	public string $email;
 	public string $surname;
 	private ?string $pipeline;
+	private ?string $final;
 	private ?int $mergeId = null;
 
 	public function __construct($array, $amo, $id = null)
@@ -43,6 +46,7 @@ class Contact extends MzpoAmo
 				$this->name = $array['name'] ?: '';
 				$this->surname = $array['surname'] ?: '';
 				$this->pipeline = $array['pipeline'];
+				$this->final = $array['final'];
 
 				$this->contact = $this->findContact() ?: $this->createContact();
 
@@ -170,6 +174,10 @@ class Contact extends MzpoAmo
 		{
 			$contact->setLastName($this->surname);
 		}
+		if($this->phone[0] == '7')
+		{
+			$this->phone = '+'.$this->phone;
+		}
 		if($this->phone or $this->email)
 		{
 			$fields = new CustomFieldsValuesCollection();
@@ -236,6 +244,7 @@ class Contact extends MzpoAmo
 		try {
 			$this->apiClient->contacts()->link($this->contact, $links);
 		} catch (AmoCRMApiException $e) {
+			Log::writeError(Log::CONTACT, $e);
 			printError($e);
 			die;
 		}
@@ -276,7 +285,7 @@ class Contact extends MzpoAmo
 				foreach($leads as $item)
 				{
 					$lead = $this->apiClient->leads()->getOne($item->id);
-					if($lead->getStatusId() == 142 or $lead->getStatusId()==143 or $lead->getPipelineId() != $this->pipeline)
+					if($lead->getStatusId() == 142 or $lead->getStatusId()==143 or ($lead->getPipelineId() != $this->final and $lead->getPipelineId() != Pipelines::TEST_DANIL))
 					{
 						continue;
 					}
@@ -470,7 +479,10 @@ class Contact extends MzpoAmo
 	 */
 	public function getCFValue($id)
 	{
-		return $this->contact->getCustomFieldsValues()->getBy('fieldId', $id)->getValues()[0]->getValue();
+		if($this->contact->getCustomFieldsValues()->getBy('fieldId', $id))
+		{
+			return $this->contact->getCustomFieldsValues()->getBy('fieldId', $id)->getValues()[0]->getValue();
+		}
 	}
 
 
@@ -486,4 +498,74 @@ class Contact extends MzpoAmo
 		$this->contact->setUpdatedBy($id);
 	}
 
+	public function getName()
+	{
+		return $this->contact->getName();
+	}
+
+	public function getId()
+	{
+		return $this->contact->getId();
+	}
+
+
+	public function setCFStringValue($id, $value) : bool
+	{
+		try {
+			$cfvs = $this->contact->getCustomFieldsValues();
+
+			$cfvs
+				->add(
+					(new TextCustomFieldValuesModel())
+						->setFieldId($id)
+						->setValues(
+							(new TextCustomFieldValueCollection())
+								->add(
+									(new TextCustomFieldValueModel())
+										->setValue($value)
+								)
+						)
+				);
+			$this->contact->setCustomFieldsValues($cfvs);
+			return true;
+		}catch (AmoCRMApiException $e)
+		{
+			Log::writeError(Log::LEAD, $e);
+			return false;
+		}
+
+	}
+
+	/**
+	 *  Создание комментария для сделки (поле comment)
+	 * @param $message
+	 * @param $lead
+	 * @return \AmoCRM\Models\NoteModel|void
+	 * @throws \AmoCRM\Exceptions\AmoCRMMissedTokenException
+	 * @throws \AmoCRM\Exceptions\InvalidArgumentException
+	 */
+	public function newNote(string $message) : NoteModel
+	{
+		#region создание модели комментария
+		try	{
+			$leadNotesService = $this->apiClient->notes(EntityTypesInterface::CONTACTS);
+			$Note = new CommonNote();
+			$Note->setText($message)
+				->setEntityId($this->contact->getId());
+		} catch (Exception $e)
+		{
+			Log::writeError(Log::CONTACT, $e);
+		}
+		#endregion
+
+		#region сохранение
+		try {
+			$note = $leadNotesService->addOne($Note);
+		} catch (AmoCRMApiException $e) {
+			Log::writeError(Log::CONTACT, $e);
+		}
+		#endregion
+
+		return $note;
+	}
 }

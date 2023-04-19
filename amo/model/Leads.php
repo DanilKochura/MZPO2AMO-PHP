@@ -9,6 +9,9 @@ use AmoCRM\Collections\TagsCollection;
 use AmoCRM\Exceptions\AmoCRMApiErrorResponseException;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Exceptions\AmoCRMApiNoContentException;
+use AmoCRM\Exceptions\AmoCRMMissedTokenException;
+use AmoCRM\Exceptions\AmoCRMoAuthApiException;
+use AmoCRM\Exceptions\InvalidArgumentException;
 use AmoCRM\Filters\ContactsFilter;
 use AmoCRM\Filters\NotesFilter;
 use AmoCRM\Helpers\EntityTypesInterface;
@@ -39,7 +42,7 @@ use MzpoAmo\CustomFields;
 class Leads extends MzpoAmo
 {
 	private ?LeadModel $lead;
-	public function 	__construct($post, $type = self::SUBDOMAIN, $id = null)
+	public function 	__construct($post, $type = self::SUBDOMAIN, $id = null, $with = null)
 	{
 		parent::__construct($type);
 
@@ -48,13 +51,20 @@ class Leads extends MzpoAmo
 		{
 			Log::writeLine(Log::LEAD, 'Слияние сделки со сделкой '.$id);
 			try{
-				$this->lead = $this->apiClient->leads()->getOne($id);
+				if($with)
+				{
+					$this->lead = $this->apiClient->leads()->getOne($id, $with);
+				} else
+				{
+					$this->lead = $this->apiClient->leads()->getOne($id);
+				}
 
 			} catch (AmoCRMApiNoContentException $ex )
 			{
 				$this->lead = null;
 			} catch (Exception $e)
 			{
+				Log::writeError(Log::LEAD, print_r($e, 1));
 				die($e);
 			}
 		}
@@ -87,7 +97,7 @@ class Leads extends MzpoAmo
 	private $post_to_amo = [
 		'city_name' => CustomFields::CITY,
 		'result' => CustomFields::RESULT,
-		'roistat_marker' => CustomFields::ROISTAT_MARKER,
+		'roistat_marker' => CustomFields::SOURCE,
 		'site' => CustomFields::SITE,
 		'form_name_site' => CustomFields::TYPE,
 		'roistat_visit'=> CustomFields::ROISTAT,
@@ -98,6 +108,14 @@ class Leads extends MzpoAmo
 		'_ym_uid' => CustomFields::YM_UID,
 	];
 
+
+
+	private  const FORM_TAGS =
+		[
+			'партнеры' => Tags::PARTNERS,
+			'Выставка' => Tags::EXPOSITION
+		];
+
 	/**
 	 * Добавление в амо нового лида
 	 * @param $post
@@ -105,52 +123,59 @@ class Leads extends MzpoAmo
 	 */
 	public function newLead(array $post) : LeadModel
 	{
-//		$pipeline = $post['pipeline'] ?: PIPELINE;
+		$pipeline =  Pipelines::TEST_DANIL;
 
-		if($this->type == self::SUBDOMAIN)
-		{
-			$price = (int)$post['price'] ?: 0;
-			$webinar = (bool)$post['webinar'];
-			$events = (bool)$post['events'];
-			$demoLesson = (bool)(isset($post['form_name_site']) and strpos('Пробный урок', $post['form_name_site'] !== false));
-
-			if ($price == 0 &&
-				$webinar)
-			{
-				$pipeline = Pipelines::FREE_WEBINARS;
-				$status = Statuses::NEW_LEAD_WEBINARS;
-			}
-
-			if ($demoLesson)
-			{
-				$pipeline = Pipelines::OPEN_LESSON;
-				$status = Statuses::NEW_LEAD_OPEN_LESSON;
-			}
-		}
+//		if($this->type == self::SUBDOMAIN)
+//		{
+//			$price = (int)$post['price'] ?: 0;
+//			$webinar = (bool)$post['webinar'];
+//			$events = (bool)$post['events'];
+//			$demoLesson = (bool)(isset($post['form_name_site']) and strpos('Пробный урок', $post['form_name_site'] !== false));
+//
+//			if ($price == 0 &&
+//				$webinar)
+//			{
+//				$pipeline = Pipelines::FREE_WEBINARS;
+//				$status = Statuses::NEW_LEAD_WEBINARS;
+//			}
+//
+//			if ($demoLesson)
+//			{
+//				$pipeline = Pipelines::OPEN_LESSON;
+//				$status = Statuses::NEW_LEAD_OPEN_LESSON;
+//			}
+//		}
 
 		#region создание модели лида
-		$lead = (new LeadModel());
+		try {
+			$lead = new LeadModel();
 
-		$lead->setName('Новая заявка с сайта '.$post['site'])
-			->setPipelineId($pipeline)
-			->setCustomFieldsValues(
-				(new CustomFieldsValuesCollection())
-					->add(
-						(new TextCustomFieldValuesModel())
-							->setFieldId(CustomFields::TYPE[0])
-							->setValues(
-								(new TextCustomFieldValueCollection())
-									->add(
-										(new TextCustomFieldValueModel())
-											->setValue($post['form_name_site'])
-									)
-							)
-					));
+			$lead->setName('Новая сделка')
+				->setPipelineId($pipeline)
+				->setCustomFieldsValues(
+					(new CustomFieldsValuesCollection())
+						->add(
+							(new TextCustomFieldValuesModel())
+								->setFieldId(CustomFields::TYPE[0])
+								->setValues(
+									(new TextCustomFieldValueCollection())
+										->add(
+											(new TextCustomFieldValueModel())
+												->setValue($post['form_name_site']?:$post['comment'])
+										)
+								)
+						));
+		} catch (Exception $e)
+		{
+			Log::writeError(Log::LEAD, print_r($e, 1));
+			die();
+		}
 
 		if($post['status'])
 		{
 			$lead->setStatusId($post['status']);
 		}
+
 		$lead->setCustomFieldsValues($this->customLeadFileds($post));
 		#endregion
 
@@ -159,10 +184,12 @@ class Leads extends MzpoAmo
 			$lead = $this->apiClient->leads()->addOne($lead);
 		}
 		catch (AmoCRMApiException $e) {
+			Log::writeError(Log::LEAD, $e);
 			printError($e);
 			die;
 		}
 		#endregion
+
 
 		return $lead;
 
@@ -192,18 +219,22 @@ class Leads extends MzpoAmo
 	public function newNote(string $message) : NoteModel
 	{
 		#region создание модели комментария
-		$leadNotesService = $this->apiClient->notes(EntityTypesInterface::LEADS);
-		$Note = new CommonNote();
-		$Note->setText($message)
-			->setEntityId($this->lead->getId());
+		try	{
+			$leadNotesService = $this->apiClient->notes(EntityTypesInterface::LEADS);
+			$Note = new CommonNote();
+			$Note->setText($message)
+				->setEntityId($this->lead->getId());
+		} catch (Exception $e)
+		{
+			Log::writeError(Log::LEAD, $e);
+		}
 		#endregion
 
 		#region сохранение
 		try {
 			$note = $leadNotesService->addOne($Note);
 		} catch (AmoCRMApiException $e) {
-			PrintError($e);
-			die;
+			Log::writeError(Log::LEAD, $e);
 		}
 		#endregion
 
@@ -215,14 +246,14 @@ class Leads extends MzpoAmo
 	 * @param $POST
 	 * @return CustomFieldsValuesCollection
 	 */
-	private function customLeadFileds($POST) : CustomFieldsValuesCollection
+	public function customLeadFileds($POST) : CustomFieldsValuesCollection
 	{
-
+		Log::writeLine(Log::LEAD, 'fdf');
 		$fileds = new CustomFieldsValuesCollection();
-		$i = $this->type == self::SUBDOMAIN_CORP ? 1 : 2;
+		$i = $this->type == self::SUBDOMAIN ? 0 : 1;
 		foreach ($this->post_to_amo as $post => $id)
 		{
-			if ($POST[$post] and $id[$i])
+			if ($POST[$post] and isset($id[$i]))
 			{
 				$fileds->add(
 					(new TextCustomFieldValuesModel())
@@ -237,6 +268,7 @@ class Leads extends MzpoAmo
 				);
 			}
 		}
+		Log::writeLine(Log::LEAD, 'fdf');
 
 		return $fileds;
 
@@ -413,7 +445,12 @@ class Leads extends MzpoAmo
 	 */
 	public function setTags(array $newtags)
 	{
-		$tags = $this->lead->getTags();
+		try {
+			$tags = $this->lead->getTags() ?: new TagsCollection();
+		} catch (AmoCRMApiNoContentException $e)
+		{
+			$tags = new TagsCollection();
+		}
 		foreach ($newtags as $tag)
 		{
 			try {
@@ -527,6 +564,11 @@ class Leads extends MzpoAmo
 		}
 		else return 2375131;
 
+	}
+
+	public function setCFV($coll)
+	{
+		$this->lead->setCustomFieldsValues($coll);
 	}
 
 	/**
@@ -720,10 +762,60 @@ class Leads extends MzpoAmo
 
 	}
 
+	public static function getPostTags($post)
+	{
+		$tags = [];
+		foreach (self::FORM_TAGS as $name => $tag)
+		{
+			if(strpos($post, $name) !== false)
+			{
+				$tags[] = $tag;
+			}
+		}
+		return $tags;
+	}
+
 
 	public function getStatus()
 	{
 		return $this->lead->getStatusId();
 	}
 
+
+	/**
+	 * @return array
+	 * @throws AmoCRMApiException
+	 * @throws AmoCRMMissedTokenException
+	 * @throws AmoCRMoAuthApiException
+	 * @throws InvalidArgumentException
+	 */
+	public function getCatalogElements(): array
+	{
+		$catalogLinks =  $this->lead->getCatalogElementsLinks();
+		$catalogElements = [];
+		foreach ($catalogLinks as $l)
+		{
+			$el = $this->apiClient->catalogElements(12463)->getOne($l->getId());
+			$arr = [];
+			$arr['uid'] = $el->getCustomFieldsValues()->getBy('fieldId', 710407)->getValues()->first()->getValue();
+			$arr['id'] = $el->getId();
+			$catalogElements[] = $arr;
+		}
+		return $catalogElements;
+	}
+
+
+	public function isCorp()
+	{
+		if($this->type == MzpoAmo::SUBDOMAIN)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	public function getId()
+	{
+		return$this->lead->getId();
+	}
 }

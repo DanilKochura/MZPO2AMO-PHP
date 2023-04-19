@@ -33,6 +33,7 @@ class MzpoAmo
 	public const  DANIL = 8348113;
 	#endregion
 	protected string $type;
+	protected int $int_type;
 	#region retail
  	public const SUBDOMAIN = 'mzpoeducationsale'; //Поддомен нужного аккаунта
 	protected const SECRET = 'KAHuESf38NuVHQ6TxpzaN5eWnbe8TutYO5eo9olYoXAe7xUoYXlHwuYlh4WnFg3R';
@@ -49,7 +50,10 @@ class MzpoAmo
 	#endregion
 
 	public AmoCRMApiClient $apiClient;
-
+	public const ACCOUNTS_IDS = [
+		self::SUBDOMAIN => 28395871,
+		self::SUBDOMAIN_CORP => 28395871
+	];
 
 	public function __construct($type = self::SUBDOMAIN)
 	{
@@ -61,6 +65,7 @@ class MzpoAmo
 			$this->apiClient = new AmoCRMApiClient($this::ID_CORP, self::SECRET_CORP, self::REDIRECT_CORP);
 		}
 		$this->type = $type;
+		$this->int_type = $type == self::SUBDOMAIN ? 0 : 1;
 
 		#region установка и смена токенов
 		$accessToken = getToken($type);
@@ -81,5 +86,20 @@ class MzpoAmo
 
 	}
 
+	public function getAccountId(): int
+	{
+		return self::ACCOUNTS_IDS[$this->type];
+	}
+
+
+	public function getType(): int
+	{
+		return $this->int_type;
+	}
+
+	public function getSubdomain()
+	{
+		return$this->type;
+	}
 
 }

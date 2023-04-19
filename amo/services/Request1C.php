@@ -3,6 +3,9 @@ namespace services;
 
 use GuzzleHttp\Client;
 
+/**
+ * @method EditApplication_POST(\MzpoAmo\Lead1C $lead)
+ */
 class Request1C
 {
 	public string $pass;
@@ -22,7 +25,9 @@ class Request1C
 
 	public function request($type, $method, $data = null)
 	{
-//		$url = $this->host.$method;
+
+		//region cUrl
+		//		$url = $this->host.$method;
 //		$ch = curl_init($url);
 //
 //		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -40,12 +45,40 @@ class Request1C
 //			echo $response; die();
 //		}
 //		curl_close($ch);
-		return $this->client->request($type, $this->host.$method, [
+		//endregion
+
+		$head = [
 			'auth' => [$this->user, $this->pass],
 			'User-agent' => 'mzpo1C-client/1.0',
 			'Content-type' => 'application/json',
 			'Accept' => 'application/json',
-			'body' => $data,
-		]);
+		];
+		if($data and strtolower($type) == 'post')
+		{
+			$head['body'] = json_encode($data);
+		}
+		return json_decode($this->client->request($type, $this->host.$method, $head)->getBody());
 	}
+
+	public function __call($name, $arguments)
+	{
+		$array = explode('_', $name);
+		if(count($array) < 2)
+		{
+			throw new \Exception('Undefined method: '.$array);
+		}
+		if(strtolower($array[1]) == 'get')
+		{
+			$method = $array[0].'?uid='.$arguments[0];
+		} else
+		{
+			$method = $array[0];
+		}
+
+		return $this->request($array[1], $method, $arguments[0]);
+
+	}
+
+
+
 }
