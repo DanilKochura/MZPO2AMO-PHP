@@ -40,7 +40,7 @@ interface CustomFields
 
 	public const CORP_MAN = [761425];
 
-	public const CLIENT_1C = [710429];
+	public const CLIENT_1C = [710429, 748405];
 
 	public const STUDY_FORM_RET = [643207];
 	public const STUDY_TYPE = [644763];
@@ -53,7 +53,21 @@ interface CustomFields
 
 	public const PREPODAVATEL = [730623];
 	public const AUDITORY = [730625];
+	public const PHONE = [264911, 33575];
+	public const EMAIL = [264913, 33577];
+	public const SNILS = [724399, 757933];
+	public const SEX = [710417];
+	public const PASS_SERIE = [715535, 748393];
+	public const PASS_NUMBER = [715537, 748395];
+	public const PASS_WHERE = [650841, 748399];
+	public const PASS_CODE = [650841, 748401];
+	public const PASS_ADDRESS = [650843, 748403];
+	public const BIRTHDAY = [644285, 68819];
 
+	public const CATALOG = [12463,5111];
+	public const PASS_WHEN = [753403,753403];
+
+	public const PRODUCT_1c = [710407, 751191];
 	public const CORP_FIELDS = [
 		self::SITE, self::TYPE, self::ROISTAT, self::PAGE, self::RET_ID
 	];

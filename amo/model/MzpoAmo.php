@@ -52,7 +52,7 @@ class MzpoAmo
 	public AmoCRMApiClient $apiClient;
 	public const ACCOUNTS_IDS = [
 		self::SUBDOMAIN => 28395871,
-		self::SUBDOMAIN_CORP => 28395871
+		self::SUBDOMAIN_CORP => 19453687
 	];
 
 	public function __construct($type = self::SUBDOMAIN)

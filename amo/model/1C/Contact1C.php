@@ -17,7 +17,7 @@ class Contact1C implements Base1CInterface
 	public ?int $pass_serie;
 	public ?int $pass_number;
 	public ?string $pass_issued_by;
-	public ?string $pass_issued_at;
+	public  $pass_issued_at;
 	public ?string $pass_dpt;
 	public ?string $snils;
 	public ?string $address;
@@ -31,11 +31,13 @@ class Contact1C implements Base1CInterface
 		"client_id_1C" => CustomFields::CLIENT_1C,
 		"email" => CustomFields::EMAIL,
 		"phone" => CustomFields::PHONE,
-		"second_phone" => CustomFields::PHONE,
+//		"second_phone" => CustomFields::PHONE,
 		"dob" => CustomFields::BIRTHDAY,
 		"pass_serie" => CustomFields::PASS_SERIE,
 		"pass_number" => CustomFields::PASS_NUMBER,
 		"pass_dpt_code" => CustomFields::PASS_CODE,
+		"pass_issued_by" => CustomFields::PASS_WHERE,
+		"pass_issued_at" => CustomFields::PASS_WHEN,
 		"snils" => CustomFields::SNILS,
 		"address" => CustomFields::PASS_ADDRESS
 	];
@@ -65,8 +67,11 @@ class Contact1C implements Base1CInterface
 		];
 		if($client->dob)
 		{
-			$client->dob = $client->dob->toDateTimeString();
-
+			$client->dob = $client->dob->format('d.m.Y G:i:s');
+		}
+		if($client->pass_issued_at)
+		{
+			$client->pass_issued_at = $client->pass_issued_at->format('d.m.Y G:i:s');
 		}
 		return $client;
 	}

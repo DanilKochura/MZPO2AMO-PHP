@@ -2,9 +2,13 @@
 namespace services;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ServerException;
 
 /**
  * @method EditApplication_POST(\MzpoAmo\Lead1C $lead)
+ * @method EditStudent_POST(\MzpoAmo\Contact1C $client)
+ * @method EditStudent_GET(string $string)
+ * @method EditStudentV2_POST(\MzpoAmo\Contact1C $fromAmo)
  */
 class Request1C
 {
@@ -57,7 +61,13 @@ class Request1C
 		{
 			$head['body'] = json_encode($data);
 		}
-		return json_decode($this->client->request($type, $this->host.$method, $head)->getBody());
+		file_put_contents(__DIR__.'/0.txt', json_encode($data), FILE_APPEND);
+		try {
+			return json_decode($this->client->request($type, $this->host.$method, $head)->getBody());
+		} catch (\Exception $e)
+		{
+			dd($e);
+		}
 	}
 
 	public function __call($name, $arguments)

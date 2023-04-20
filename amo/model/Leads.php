@@ -792,12 +792,17 @@ class Leads extends MzpoAmo
 	public function getCatalogElements(): array
 	{
 		$catalogLinks =  $this->lead->getCatalogElementsLinks();
+		if(!$catalogLinks)
+		{
+			$this->lead = $this->apiClient->leads()->syncOne($this->lead, [LeadModel::CATALOG_ELEMENTS]);
+			$catalogLinks =  $this->lead->getCatalogElementsLinks();
+		}
 		$catalogElements = [];
 		foreach ($catalogLinks as $l)
 		{
-			$el = $this->apiClient->catalogElements(12463)->getOne($l->getId());
+			$el = $this->apiClient->catalogElements(CustomFields::CATALOG[$this->getType()])->getOne($l->getId());
 			$arr = [];
-			$arr['uid'] = $el->getCustomFieldsValues()->getBy('fieldId', 710407)->getValues()->first()->getValue();
+			$arr['uid'] = $el->getCustomFieldsValues()->getBy('fieldId',CustomFields::PRODUCT_1c[$this->getType()] )->getValues()->first()->getValue();
 			$arr['id'] = $el->getId();
 			$catalogElements[] = $arr;
 		}
@@ -817,5 +822,17 @@ class Leads extends MzpoAmo
 	public function getId()
 	{
 		return$this->lead->getId();
+	}
+
+
+	public function setNoteSave($note)
+	{
+		try {
+			$this->newNote($note);
+			$this->save();
+		} catch (Exception $e)
+		{
+			Log::writeError(Log::LEAD, $e);
+		}
 	}
 }

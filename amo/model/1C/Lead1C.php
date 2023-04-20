@@ -43,6 +43,14 @@ class Lead1C implements Base1CInterface
 		{
 			$lead1c = new self();
 
+			$catalogElements = $lead->getCatalogElements();
+			if(!$catalogElements)
+			{
+				$lead->setNoteSave('Не удалось перенести сделку: отсуствуют товары!');
+				Log::writeError(Log::LEAD, 'Отстутствуют товары в сделке');
+				throw new \Exception('Отсутвтуют товары в сделке');
+			}
+
 			if(!is_a($lead, 'MzpoAmo\Leads'))
 			{
 				$lead = new Leads([], $type, $lead, [LeadModel::CATALOG_ELEMENTS]);

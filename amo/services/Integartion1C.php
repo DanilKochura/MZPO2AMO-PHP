@@ -15,6 +15,7 @@ use MzpoAmo\Contact1C;
 use MzpoAmo\CustomFields;
 use MzpoAmo\Lead1C;
 use MzpoAmo\Leads;
+use MzpoAmo\Log;
 use MzpoAmo\MzpoAmo;
 
 /**
@@ -35,6 +36,12 @@ class Integartion1C
 		$lead1c = Lead1C::fromAMO($lead);
 
 		$contact = new Contact([], $lead->getSubdomain(), $lead->getContact());
+		if(!$contact)
+		{
+			$lead->setNoteSave('Не удалось перенести сделку: отсуствует контакт!');
+			Log::writeError(Log::LEAD, 'отсуствует контакт! в сделке');
+			throw new \Exception('отсуствует контакт в сделке');
+		}
 
 		if($client = $contact->getCFValue(CustomFields::CLIENT_1C[$lead->getType()]))
 		{
@@ -42,8 +49,17 @@ class Integartion1C
 		} else
 		{
 			$client = Contact1C::fromAmo($contact);
-			$this->EditStudent_POST($client);
+			$uid = $this->request->EditStudent_POST($client);
+			$contact->setCFStringValue(CustomFields::CLIENT_1C[$lead->getType()], $uid);
+			$contact->save();
+			$lead1c->client_id_1c = $uid;
+			dd($contact);
 		}
+
+		$uid = $this->request->EditApplication_POST($lead1c);
+		$lead->setCFStringValue(CustomFields::LEAD1C[$lead->getType()], $uid);
+		$lead->newNote('Сделка перенесеная в 1С: '.$uid);
+		$lead->save();
 
 
 	}
@@ -95,14 +111,13 @@ class Integartion1C
 		#endregion
 
 		#region Сохранение
-		$contact->newNote('UID клиента в 1с: '.$body['client_id_1C']);
 		try {
+			$contact->newNote('UID клиента в 1с: '.$body['client_id_1C']);
 			$contact->save();
 
 		} catch (AmoCRMApiErrorResponseException $e)
 		{
-			dd($contact);
-			dd($e->getValidationErrors());
+			Log::writeError(Log::LEAD, $e->getValidationErrors());
 		}
 		#endregion
 
