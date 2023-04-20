@@ -230,6 +230,7 @@ foreach ($_POST['students'] as $student)
 
 		if ($res)
 		{
+			$res->first()->setUpdatedBy(Users::PLATOVA);
 
 			$ar[] = $res;
 			$lc->add($res->first());
@@ -251,6 +252,7 @@ foreach ($_POST['students'] as $student)
 	}
 	if($res)
 	{
+		$res->first()->setUpdatedBy(Users::PLATOVA);
 
 		$ar[] = $res;
 		$lc->add($res->first());
