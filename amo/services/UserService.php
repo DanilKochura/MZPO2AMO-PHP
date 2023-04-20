@@ -10,6 +10,11 @@ class UserService extends \MzpoAmo\MzpoAmo
 	{
 		parent::__construct($type);
 	}
+
+	public function getNameById($id)
+	{
+		return $this->apiClient->users()->getOne($id)->getName();
+	}
 	public function getUser($name)
 	{
 		$headers = [
