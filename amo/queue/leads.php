@@ -16,6 +16,8 @@ use MzpoAmo\Contact;
 use MzpoAmo\Leads;
 use MzpoAmo\Log;
 use MzpoAmo\MzpoAmo;
+use MzpoAmo\Pipelines;
+use MzpoAmo\Tags;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use reports\LeadsReport;
@@ -47,6 +49,8 @@ try {
 			$post = json_decode($msg->body, true);
 			Log::writeLine(Log::LEAD, print_r($post,1));
 			$amo = $post['amo'] == 'corp' ? MzpoAmo::SUBDOMAIN_CORP : MzpoAmo::SUBDOMAIN;
+			Log::writeLine(Log::LEAD, '1');
+
 			$contact = new Contact($post, $amo); //создаем контакт #1
 
 			$events = (bool)$post['events'];
@@ -60,17 +64,32 @@ try {
 			else
 			{
 				$base = new Leads($post, $amo);
+
 			}
+			try {
+				$base->setTags(Leads::getPostTags($post['form_name_site']));
+				$base->save();
+			} catch (Exception $e)
+			{
+				Log::writeError(Log::LEAD, $e);
+			}
+			Log::writeLine(Log::LEAD, 'Taged');
+
 			if($post['comment'])
 			{
 				$note = $base->newNote($post['comment']); #6
 			}
+			Log::writeLine(Log::LEAD, '3');
+
 			if($base and $contact and $contact->linkLead($base->getLead()))
 			{
 				echo 'ok';
 			}
-			$report = new LeadsReport();
-			$report->add([$post['site'], date('Y-m-d H:i:s'), json_encode($post), $base->getLead()->getId(), $contact->getContact()->getId()]); #7
+			Log::writeLine(Log::LEAD, '3');
+
+//			$report = new LeadsReport();
+//			$report->add([$post['site'], date('Y-m-d H:i:s'), json_encode($post), $base->getLead()->getId(), $contact->getContact()->getId()]); #7
+
 
 		} catch (Exception $e)
 		{
