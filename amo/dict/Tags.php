@@ -5,6 +5,10 @@ namespace MzpoAmo;
 interface Tags
 {
   public const TEST = ['id' => 273375, 'name' => "_test" ];
+  public const AVITO = ['id' => 370175, 'name' => "Авито" ];
+  public const AVITOO = ['id' => 370373, 'name' => "AVITO" ];
+  public const EXPOSITION = ['id' => 370377, 'name' => "Выставка"];
+  public const PARTNERS = ['id' => 370401, 'name' => "Партнеры"];
 	public const I = [ 'id' => 275327,  'name' => "!I" ];
 	public const RASSYLKA_SKK = [ 'id' => 304233,  'name' => "#рассылка по базе скк 25.10" ];
 	public const GIS2 = [ 'id' => 266015,  'name' => "2gis" ];
