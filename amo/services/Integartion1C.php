@@ -10,6 +10,8 @@ use AmoCRM\Exceptions\InvalidArgumentException;
 use AmoCRM\Models\BaseApiModel;
 use AmoCRM\Models\LeadModel;
 use Exception;
+use MzpoAmo\Company;
+use MzpoAmo\Company1C;
 use MzpoAmo\Contact;
 use MzpoAmo\Contact1C;
 use MzpoAmo\CustomFields;
@@ -43,6 +45,7 @@ class Integartion1C
 			throw new \Exception('отсуствует контакт в сделке');
 		}
 
+
 		if($client = $contact->getCFValue(CustomFields::CLIENT_1C[$lead->getType()]))
 		{
 			$lead1c->client_id_1c = $client;
@@ -50,15 +53,32 @@ class Integartion1C
 		{
 			$client = Contact1C::fromAmo($contact);
 			$uid = $this->request->EditStudent_POST($client);
-			$contact->setCFStringValue(CustomFields::CLIENT_1C[$lead->getType()], $uid);
+			$contact->setCFStringValue(CustomFields::CLIENT_1C[$lead->getType()], $uid->client_id_1C);
 			$contact->save();
-			$lead1c->client_id_1c = $uid;
-			dd($contact);
-		}
+			$lead1c->client_id_1c = $uid->client_id_1C;
 
+		}
+		if(!$lead1c->is_corporate)
+		{
+			$lead1c->company_id_1c = $lead1c->client_id_1c;
+		} else
+		{
+			$company = new Company($lead->getCompany());
+			if($contragent = $company->getCFValue(CustomFields::COMPANY_ID_1C[$lead->getType()]))
+			{
+				$lead1c->client_id_1c = $contragent;
+			} else
+			{
+				$contragent = Company1C::fromAmo($company);
+				$uid = $this->request->EditPartner_POST($contragent);
+				$company->setCFStringValue(CustomFields::COMPANY_ID_1C[$lead->getType()], $uid->company_id_1C);
+				$company->save();
+				$lead1c->company_id_1c = $uid->company_id_1C;
+			}
+		}
 		$uid = $this->request->EditApplication_POST($lead1c);
-		$lead->setCFStringValue(CustomFields::LEAD1C[$lead->getType()], $uid);
-		$lead->newNote('Сделка перенесеная в 1С: '.$uid);
+		$lead->setCFStringValue(CustomFields::LEAD1C[$lead->getType()], $uid->lead_id_1C);
+		$lead->newNote('Сделка перенесеная в 1С: '.$uid->lead_id_1C);
 		$lead->save();
 
 

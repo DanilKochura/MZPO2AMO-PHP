@@ -9,6 +9,7 @@ use GuzzleHttp\Exception\ServerException;
  * @method EditStudent_POST(\MzpoAmo\Contact1C $client)
  * @method EditStudent_GET(string $string)
  * @method EditStudentV2_POST(\MzpoAmo\Contact1C $fromAmo)
+ * @method EditPartner_POST(\MzpoAmo\Company1C $contragent)
  */
 class Request1C
 {

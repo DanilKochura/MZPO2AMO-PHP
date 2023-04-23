@@ -68,6 +68,15 @@ interface CustomFields
 	public const PASS_WHEN = [753403,753403];
 
 	public const PRODUCT_1c = [710407, 751191];
+
+	public const OGRN = [null, 69121];
+	public const INN = [null, 69123];
+	public const KPP = [null, 69125];
+	public const BIC = [null, 69129];
+	public const POST_ADDRESS = [null, 748389];
+	public const ACC_NO = [null, 69127];
+	public const ADDRESS = [null, 33583];
+	public const COMPANY_ID_1C = [null, 748387];
 	public const CORP_FIELDS = [
 		self::SITE, self::TYPE, self::ROISTAT, self::PAGE, self::RET_ID
 	];

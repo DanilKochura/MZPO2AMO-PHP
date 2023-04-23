@@ -7,6 +7,7 @@ use AmoCRM\Collections\LinksCollection;
 use AmoCRM\Collections\TagsCollection;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Helpers\EntityTypesInterface;
+use AmoCRM\Models\BaseApiModel;
 use AmoCRM\Models\ContactModel;
 use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
@@ -19,6 +20,7 @@ use AmoCRM\Models\NoteModel;
 use AmoCRM\Models\NoteType\CommonNote;
 use AmoCRM\Models\TagModel;
 use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
+use Exception;
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/amo/config/db.php';
@@ -102,4 +104,24 @@ class MzpoAmo
 		return$this->type;
 	}
 
+
+
+//	public static function getCFValue(BaseApiModel $model, $id)
+//	{
+//		try {
+//			$customFields = $model->getCustomFieldsValues();
+//
+//			//Получим значение поля по его ID
+//			if (!empty($customFields)) {
+//				$textField = $customFields->getBy('fieldId', $id);
+//				if ($textField) {
+//					return $textField->getValues()->first()->getValue();
+//				}
+//			}
+//		} catch (Exception $e)
+//		{
+//			Log::writeError(Log::LEAD, $e);
+//		}
+//		return null;
+//	}
 }

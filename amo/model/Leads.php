@@ -485,6 +485,19 @@ class Leads extends MzpoAmo
 		return null;
 	}
 
+	public function getCompany()
+	{
+		$links = $this->apiClient->leads()->getLinks($this->lead);
+		foreach ($links as $link)
+		{
+			if($link->getToEntityType() == 'companies')
+			{
+				return $this->apiClient->companies()->getOne($link->getToEntityId());
+			}
+		}
+		return null;
+	}
+
 
 
 	/**

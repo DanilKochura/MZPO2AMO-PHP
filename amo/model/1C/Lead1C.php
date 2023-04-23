@@ -74,6 +74,11 @@ class Lead1C implements Base1CInterface
 				]
 			];
 
+			if($lead->getType() == 1)
+			{
+				$lead1c->is_corporate = true;
+			}
+
 
 			$uc = new UserService($lead->getSubdomain());
 			$name = $uc->getNameById($lead->getResponsible());
