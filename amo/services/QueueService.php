@@ -18,7 +18,7 @@ class QueueService
 	public const USER = 'wxnojbul';
 
 	public const PORT = 5672;
-	public const PASSWORD = 'kMD0TgkoztlrBKYBxxkY-_StEN0xU9is';
+	public const PASSWORD = 'wEMJiX1i6gACUoa_x4dQObXI3krBuT_H';
 	public const VHOST = 'wxnojbul';
 	private AMQPStreamConnection $connection;
 
