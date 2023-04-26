@@ -7,17 +7,18 @@ use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Filters\CatalogElementsFilter;
 use AmoCRM\Models\CatalogElementModel;
 use MzpoAmo\Course;
+use MzpoAmo\CustomFields;
 use MzpoAmo\Log;
 use MzpoAmo\MzpoAmo;
 
 class CoursesServise extends MzpoAmo
 {
 
-	public const CATALOG = 12463;
+	public const CATALOG = [12463, 5111];
 
-	public function __construct()
+	public function __construct($type = MzpoAmo::SUBDOMAIN)
 	{
-		parent::__construct();
+		parent::__construct($type);
 	}
 
 	/**
@@ -28,8 +29,8 @@ class CoursesServise extends MzpoAmo
 	 */
 	public function deleteCourses($uid, $method)
 	{
-		$access_Token = getToken();
-		$link = 'https://' . $this::SUBDOMAIN . '.amocrm.ru/api/v2/catalog_elements' ;
+		$access_Token = getToken($this->type);
+		$link = 'https://' . $this->type . '.amocrm.ru/api/v2/catalog_elements' ;
 		$headers = [
 			'Authorization: Bearer ' . $access_Token
 		];
@@ -44,7 +45,7 @@ class CoursesServise extends MzpoAmo
 		while(1) {
 			$catalog_elements['delete'] = [];
 			foreach ($courses as $course) {
-				if ($course->getCustomFieldsValues()->getBy('fieldId', 710407)->getValues()->first()->getValue() == $uid) {
+				if ($course->getCustomFieldsValues()->getBy('fieldId', CustomFields::COURSE_UID_1c[$this->type])->getValues()->first()->getValue() == $uid) {
 					$catalog_elements['delete'][] = $course->getId();
 				}
 			}
@@ -85,9 +86,9 @@ class CoursesServise extends MzpoAmo
 	public function deleteDoubles($uid, $method)
 	{
 		#region обновление токена
-		$base = new MzpoAmo();
-		$access_Token = getToken();
-		$link = 'https://' . self::SUBDOMAIN . '.amocrm.ru/api/v2/catalog_elements' ;
+		$base = new MzpoAmo($this->type);
+		$access_Token = getToken($this->type);
+		$link = 'https://' . $this->type . '.amocrm.ru/api/v2/catalog_elements' ;
 		$headers = [
 			'Authorization: Bearer ' . $access_Token
 		];
@@ -113,7 +114,7 @@ class CoursesServise extends MzpoAmo
 			}
 			$catalog_elements['delete'] = [];
 			foreach ($courses as $course) {
-				if ($course->getCustomFieldsValues()->getBy('fieldId', 710407)->getValues()->first()->getValue() == $uid) {
+				if ($course->getCustomFieldsValues()->getBy('fieldId', CustomFields::COURSE_UID_1c[$this->getType()])->getValues()->first()->getValue() == $uid) {
 					$catalog_elements['delete'][] = $course->getId();
 				}
 			}
@@ -157,7 +158,7 @@ class CoursesServise extends MzpoAmo
 	 */
 	public function getCoursesByUid($uid): ?CatalogElementsCollection
 	{
-		$catalog = $this->apiClient->catalogs()->getOne($this::CATALOG);
+		$catalog = $this->apiClient->catalogs()->getOne($this::CATALOG[$this->getType()]);
 		$catalogElementsService = $this->apiClient->catalogElements($catalog->getId());
 		$catalogElementsFilter = new CatalogElementsFilter();
 		$catalogElementsFilter->setQuery($uid);
@@ -175,7 +176,7 @@ class CoursesServise extends MzpoAmo
 	 */
 	public function getCourse($id): ?CatalogElementModel
 	{
-		$catalog = $this->apiClient->catalogs()->getOne(12463);
+		$catalog = $this->apiClient->catalogs()->getOne($this::CATALOG[$this->getType()]);
 		$catalogElementsService = $this->apiClient->catalogElements($catalog->getId());
 		return $catalogElementsService->getOne($id);
 	}
@@ -192,10 +193,10 @@ class CoursesServise extends MzpoAmo
 	public function createCourse($name)
 	{
 		$course = new CatalogElementModel();
-		$course->setCatalogId($this::CATALOG);
+		$course->setCatalogId($this::CATALOG[$this->getType()]);
 		$course->setName($name);
 		try{
-			$course = $this->apiClient->catalogElements(self::CATALOG)->addOne($course);
+			$course = $this->apiClient->catalogElements(self::CATALOG[$this->getType()])->addOne($course);
 		}catch(\AmoCRM\Exceptions\AmoCRMApiErrorResponseException $e)
 		{
 			http_response_code(500);

@@ -14,10 +14,11 @@ use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
 class Course extends MzpoAmo
 {
 	private CatalogElementModel $course;
-	private const CATALOG = 12463;  //id списка товаров
-	public function __construct(CatalogElementModel $course)
+	public const CATALOG = [12463, 5111];
+
+	public function __construct(CatalogElementModel $course, $type = MzpoAmo::SUBDOMAIN)
 	{
-		parent::__construct();
+		parent::__construct($type);
 
 		$this->course = $course;
 
@@ -36,18 +37,30 @@ class Course extends MzpoAmo
 			{
 				$cfvs = new CustomFieldsValuesCollection();
 			}
-			$cfvs
-				->add(
-					(new TextCustomFieldValuesModel())
-						->setFieldId($id)
-						->setValues(
-							(new TextCustomFieldValueCollection())
-								->add(
-									(new TextCustomFieldValueModel())
-										->setValue($value)
-								)
-						)
-				);
+			if($field = $cfvs->getBy('fieldId', $id))
+			{
+				$cfvs->getBy('fieldId', $id)->setValues((new TextCustomFieldValueCollection())
+					->add(
+						(new TextCustomFieldValueModel())
+							->setValue($value)
+					));
+			}
+			else
+			{
+				$cfvs
+					->add(
+						(new TextCustomFieldValuesModel())
+							->setFieldId($id)
+							->setValues(
+								(new TextCustomFieldValueCollection())
+									->add(
+										(new TextCustomFieldValueModel())
+											->setValue($value)
+									)
+							)
+					);
+			}
+
 			$this->course->setCustomFieldsValues($cfvs);
 			return true;
 	}
@@ -91,7 +104,7 @@ class Course extends MzpoAmo
 	 */
 	public function save(): ?int
 	{
-		return $this->apiClient->catalogElements($this::CATALOG)->updateOne($this->course)->getId();
+		return $this->apiClient->catalogElements($this::CATALOG[$this->getType()])->updateOne($this->course)->getId();
 	}
 
 }

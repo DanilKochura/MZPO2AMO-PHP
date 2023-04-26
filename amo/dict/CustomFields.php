@@ -9,7 +9,7 @@ interface CustomFields
 	public const RESULT = [644675];
 	public const SOURCE = [639085, 748385];
 	public const TYPE = [639075, 748383];
-	public const LEAD1C = [710399];
+	public const LEAD1C = [710399, 748381];
 	public const COURSE = [357005];
 	public const ROISTAT = [639073, 758217];
 	public const PAGE = [639083, 758215];
@@ -21,17 +21,17 @@ interface CustomFields
 	public const EVENT_ADRESS = [725711];
 	public const ANALYTIC_ID = [643439];
 
-	public const SKU = [647993];
+	public const SKU = [647993, 751165];
 
-	public const DURATION = [715507];
+	public const DURATION = [715507, 751185];
 
-	public const PRICE = [647997];
+	public const PRICE = [647997, 751169];
 
-	public const STUDY_FORM = [715509];
+	public const STUDY_FORM = [715509, 751187];
 
-	public const COURSE_DESCR = [647995];
+	public const COURSE_DESCR = [647995, 751167];
 
-	public const COURSE_UID_1c = [710407];
+	public const COURSE_UID_1c = [710407, 751191];
 
 
 	public const RET_ID = [null, 752191];
