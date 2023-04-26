@@ -6,6 +6,7 @@ class Log
 {
 	public const CONTACT = 'contact/';
 	public const LEAD = 'lead/';
+	public const C1 = '1c/';
 	public const POST = 'common/';
 	public const WEBHOOKS = 'webhooks/';
 
