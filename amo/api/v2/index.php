@@ -72,7 +72,7 @@ elseif($method=='delete_doubles')
 	#endregion
 
 	#region получение и удаление
-	$courseBase = new CoursesServise(\MzpoAmo\MzpoAmo::SUBDOMAIN_CORP);
+	$courseBase = new CoursesServise();
 	$courseBase->deleteDoubles($uid, $method);
 	#endregion
 }
