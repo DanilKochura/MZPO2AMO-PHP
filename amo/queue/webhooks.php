@@ -415,6 +415,33 @@ try {
 
 		}
 		#endregion
+		# https://www.mzpo-s.ru/amo/webhooks/?avito_lead
+		#region возвращение из договорного отдела (торжественно)
+		elseif ($method == 'avito_lead')
+		{
+			$id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
+
+			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
+			Log::writeLine(Log::WEBHOOKS, 'Сделка получена');
+
+			$str = $lead->getCFValue(731115)	;
+
+			$lead->setCFStringValue(CustomFields::RESULT[0], 'Заявка с Авито');
+			$lead->setCFStringValue(CustomFields::SITE[0], 'Avito.ru');
+			$lead->setCFStringValue(CustomFields::SOURCE[0], 'Avito.ru');
+			$lead->setCFStringValue(CustomFields::TYPE[0], 'Заявка записаться на '.$str.' с Авито');
+			Log::writeLine(Log::WEBHOOKS, 'Fileds');
+
+			$lead->deleteTag(Tags::HANDMADE);
+			$lead->setTags([Tags::AVITO]);
+			Log::writeLine(Log::WEBHOOKS, 'Tags');
+
+			$lead->save();
+
+
+		}
+		#endregion
 
 
 		$msg->ack();
