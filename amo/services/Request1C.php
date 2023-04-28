@@ -20,7 +20,7 @@ class Request1C
 
 	public function __construct()
 	{
-		$data = json_decode(file_get_contents('access.json'), true);
+		$data = json_decode(file_get_contents($_SERVER['DOCUMENT_ROOT'].'/amo/access.json'), true);
 		$this->pass = $data['pwd'];
 		$this->user = $data['username'];
 		$this->host = $data['uri'];
