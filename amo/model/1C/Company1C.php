@@ -9,9 +9,9 @@ class Company1C implements Base1CInterface
 	public string $name;
 	public ?string $email;
 	public ?string $phone;
-//	public ?string $signee;
+	public ?string $signee;
 
-	public ?string $orgn;
+	public ?string $ogrn;
 	public ?string $inn;
 	public ?string $acc_no;
 	public ?string $kpp;
@@ -19,6 +19,7 @@ class Company1C implements Base1CInterface
 	public ?string $address;
 	public ?string $post_address;
 //	public ?string $partner_type;
+
 
 	private const COMPARER = [
 		'company_id_1C' => CustomFields::COMPANY_ID_1C,
@@ -36,18 +37,23 @@ class Company1C implements Base1CInterface
 
 	public static function fromAMO($model, $type = null)
 	{
+		#region __construct()
 		$company1c = new self();
+		#endregion
 
+		//region Получение модели компании
 		if(!is_a($model, 'MzpoAmo\Company'))
 		{
 			$model = new Contact([], $type, $model);
 		}
+		//endregion
+
+		//region Заполнение полей
 		foreach (self::COMPARER as $prop => $amo) {
 			if (!empty($amo[$model->getType()]) and property_exists(self::class, $prop)) {
-				$company1c->{$prop} = $model->getCFValue($amo[$model->getType()]);
+				$company1c->{$prop} = $model->getCFValue($amo[$model->getType()]) ?: null;
 			}
 		}
-
 
 		$company1c->name = $model->getName();
 
@@ -57,7 +63,7 @@ class Company1C implements Base1CInterface
 				'entity_id' => $model->getId()
 			]
 		];
-
+		//endregion
 
 		return $company1c;
 
