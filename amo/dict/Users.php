@@ -24,4 +24,7 @@ interface Users
 	public const FEDKO = 8366494;
 
 	public const MITROFANOVA = 9193650;
+
+	public const ULYASHEVA = 8628763;
+	public const VESELOVA = 9508182;
 }
