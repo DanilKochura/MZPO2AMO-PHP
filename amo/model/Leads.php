@@ -324,7 +324,7 @@ class Leads extends MzpoAmo
 	public function setCFStringValue($id, $value) : bool
 	{
 		try {
-			$cfvs = $this->lead->getCustomFieldsValues();
+			$cfvs = $this->lead->getCustomFieldsValues() ?: new CustomFieldsValuesCollection();
 
 				$cfvs
 					->add(
@@ -558,24 +558,27 @@ class Leads extends MzpoAmo
 	}
 
 	/**
-	 * Получение ответственного для корп
+	 * Получение ответственного для корп  (Распределитель)
 	 * @param $responsible
 	 * @return false|int
 	 */
 	public static function getCorpResponsible($responsible)
 	{
-		if($responsible == 8993890)
-		{
-			return 8603416;
-		} elseif($responsible == 8993898)
-			{
-				return 8628763;
-			}
-		elseif($responsible == 5761144)
-		{
-			return 2375131;
-		}
-		else return 2375131;
+//		if($responsible == 8993890)
+//		{
+//			return 8603416;
+//		} elseif($responsible == 8993898)
+//			{
+//				return 8628763;
+//			}
+//		elseif($responsible == 5761144)
+//		{
+//			return 2375131;
+//		}
+//		else return 2375131;
+		$USERS = [\MzpoAmo\Users::ULYASHEVA, \MzpoAmo\Users::VESELOVA];
+
+		return  $USERS[array_rand([\MzpoAmo\Users::ULYASHEVA, \MzpoAmo\Users::VESELOVA], 1)];
 
 	}
 
