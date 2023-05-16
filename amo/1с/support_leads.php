@@ -48,6 +48,7 @@ $resps = [
 	'Симкина Екатерина' => Users::SIMKINA,
 	'Федько Мария' => Users::FEDKO,
 	'Митрофанова Наталия' => Users::MITROFANOVA
+
 ];
 #endregion
 
@@ -63,8 +64,10 @@ $_POST=json_decode(file_get_contents('php://input'), true);
 file_put_contents(__DIR__.'/0.txt', json_encode($_POST), FILE_APPEND);
 $mzpo = new MzpoAmo();
 
+$t = new Leads([], MzpoAmo::SUBDOMAIN, $_POST['lead_id']);
+
 #region Новая заявка
-if(!$_POST['lead_id']) {
+if(!$_POST['lead_id'] or !$t->getLead()) {
 
 
 	$lead = [];
@@ -157,9 +160,12 @@ if(!$_POST['lead_id']) {
 	$resp = $userService->getUser($_POST['responsible_user']) ?: Users::PLATOVA;
 	$lead->setResponsibleUserId($resp);
 	$lead->setCustomFieldsValues($cfvs);
-	$lead->setPipelineId(Pipelines::STUDY_OCHNO);
+	$pip = $_POST['responsible_user'] == 'Пищаева Екатерина' ? Pipelines::STUDY_DIST : Pipelines::STUDY_OCHNO;
+	$lead->setPipelineId($pip);
 	#endregion
 	$lead = $mzpo->apiClient->leads()->addOne($lead);
+	file_put_contents(__DIR__.'/1.txt', print_r([$pip, $lead], 1), FILE_APPEND);
+
 }
 #endregion
 #region Обновление существужющей заявки (только контакты)
@@ -265,8 +271,10 @@ try {
 	$mzpo->apiClient->leads()->link($lead, $lc);
 } catch (\AmoCRM\Exceptions\AmoCRMApiErrorResponseException $e)
 {
+	file_put_contents(__DIR__.'/er.txt', print_r($e, 1), FILE_APPEND);
 	dd($e);
 	dd($e->getValidationErrors());
+
 } catch (Exception $e)
 {
 	dd($e);
