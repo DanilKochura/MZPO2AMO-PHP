@@ -197,14 +197,13 @@ try {
 				Log::writeLine(Log::WEBHOOKS, 'Сделка: '.$id);
 
 				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
-				file_put_contents(__DIR__.'/0.txt', print_r($lead->getLead(), 1), FILE_APPEND);
 				if(!$lead->getLead())
 				{
 					$msg->ack();
 					return;
 				}
 				$contact = new Contact([], MzpoAmo::SUBDOMAIN, $lead->getContact());
-
+				$lead->setResponsibleUser($contact->getResponsibleUserId());
 				$contact = Contact::clone($contact);
 
 				Log::writeLine(Log::WEBHOOKS, 'Контакт склонирован: '.$contact->getContact()->getId());
@@ -237,12 +236,22 @@ try {
 				$id_ret = $id_ret1;
 			}
 			Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице: '.$id_ret);
+			try {
+				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+				if(!$lead->getLead())
+				{
 
-			$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
-
-			if(!$lead->getLead())
+					$id_ret = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
+					Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице (по второму полю): '.$id_ret);
+					$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
+					if(!$lead->getLead()) {
+						Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице не существует!');
+						$msg->ack();
+						die();
+					}
+				}
+			} catch (Exception $e)
 			{
-
 				$id_ret = $leadCorp->getCFValue(CustomFields::ID_LEAD_RET[1]);
 				Log::writeLine(Log::WEBHOOKS, 'Сделка в рознице (по второму полю): '.$id_ret);
 				$lead = new Leads([], MzpoAmo::SUBDOMAIN, $id_ret);
@@ -252,6 +261,8 @@ try {
 					die();
 				}
 			}
+
+
 
 			if($price = $leadCorp->getPrice())
 			{

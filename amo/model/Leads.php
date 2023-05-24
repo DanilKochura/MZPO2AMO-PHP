@@ -617,10 +617,12 @@ class Leads extends MzpoAmo
 		#region если нет, создаем и заполняем новую заявку
 		$leadCorp = new LeadModel();
 		$leadCorp->setName($lead->lead->getName());
-		if($resp = Leads::getCorpResponsible($lead->lead->getResponsibleUserId()))
-		{
-			$leadCorp->setResponsibleUserId($resp);
-		}
+//		if($resp = Leads::getCorpResponsible($lead->lead->getResponsibleUserId()))
+//		{
+//			$leadCorp->setResponsibleUserId($resp);
+//		}
+		$leadCorp->setResponsibleUserId($lead->getResponsible());
+
 		$cfvs = new CustomFieldsValuesCollection();
 		foreach (CustomFields::CORP_FIELDS as $field)
 		{
@@ -752,8 +754,7 @@ class Leads extends MzpoAmo
 			$apiClient->leads()->updateOne($leadCorp->setCustomFieldsValues($csvf));
 			Log::writeLine(Log::WEBHOOKS, 'Старая сделка обновлена!');
 			#endregion
-
-			#region Сохранение ответственного (по просьбе Левана)
+#region Сохранение ответственного (по просьбе Левана)
 			$leadNotesService = $apiClient->notes(EntityTypesInterface::LEADS);
 			$Note = new CommonNote();
 			$Note->setText('Ответственный менеджер в корпорате: '.$name)
