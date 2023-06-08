@@ -202,20 +202,21 @@ try {
 					$msg->ack();
 					return;
 				}
-				$contact = new Contact([], MzpoAmo::SUBDOMAIN, $lead->getContact());
-				$lead->setResponsibleUser($contact->getResponsibleUserId());
-				$contact = Contact::clone($contact);
-
+				$contact_ = new Contact([], MzpoAmo::SUBDOMAIN, $lead->getContact());
+				$contact = Contact::clone($contact_);
+				$resp = $contact->getResponsibleUserId();
+				$lead->setResponsibleUser($resp);
 				Log::writeLine(Log::WEBHOOKS, 'Контакт склонирован: '.$contact->getContact()->getId());
 				$leadCorp = Leads::clone($lead, $contact->hasMergableLead());
 				Log::writeLine(Log::WEBHOOKS, 'Лид склонирован: '.$leadCorp->getId());
-
+				$lead->setResponsibleUser($contact_->getResponsibleUserId());
 				$lead->setStatus(Statuses::SEND_TO_CORP);
 				$lead->save();
 
 				Log::writeLine(Log::WEBHOOKS, 'Этап изменен');
 
 				$contact->linkLead($leadCorp);
+
 				#endregion
 
 		}
