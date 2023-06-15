@@ -49,7 +49,7 @@ interface CustomFields
 	public const END_STUDY =[643201];
 	public const EXAM_DATE =[644915];
 
-	public const OFICIAL_NAME = [645965];
+	public const OFICIAL_NAME = [645965, 162301];
 
 	public const PREPODAVATEL = [730623];
 	public const AUDITORY = [730625];
@@ -68,6 +68,7 @@ interface CustomFields
 	public const PASS_WHEN = [753403,753403];
 
 	public const PRODUCT_1c = [710407, 751191];
+	public const UID_GROUP = [731923, 751191];
 
 	public const OGRN = [null, 69121];
 	public const INN = [null, 69123];

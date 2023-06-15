@@ -51,21 +51,36 @@ class MzpoAmo
 
 	#endregion
 
+
+//	#region widget
+//	public const SUBDOMAIN_WID = 'mzpoeducation'; //Поддомен нужного аккаунта
+//	protected const SECRET_WID = 'hfXeleYOjm3euYpadYW94duTOgGfDiRAT6gdOlgOmca6P3itG6kEtbIqrZKPThw2';
+//	protected const ID_WID = 'aaaf5d69-20bd-495f-8166-c1b030b8fb0f';
+//	protected const REDIRECT_WID = 'https://www.mzpo-s.ru/amo/oauth/';
+//	#endregion
+
 	public AmoCRMApiClient $apiClient;
 	public const ACCOUNTS_IDS = [
 		self::SUBDOMAIN => 28395871,
 		self::SUBDOMAIN_CORP => 19453687
 	];
 
+
 	public function __construct($type = self::SUBDOMAIN)
 	{
 		if($type == self::SUBDOMAIN)
 		{
 			$this->apiClient = new AmoCRMApiClient($this::ID, $this::SECRET, $this::REDIRECT);
+			$cl = self::ID;
 		}
-		else{
+		elseif($type == self::SUBDOMAIN_CORP){
 			$this->apiClient = new AmoCRMApiClient($this::ID_CORP, self::SECRET_CORP, self::REDIRECT_CORP);
+			$cl = self::ID_CORP;
 		}
+//		else {
+//			$this->apiClient = new AmoCRMApiClient($this::ID_WID, $this::SECRET_WID, $this::REDIRECT_WID);
+//			$cl = self::ID_WID;
+//		}
 		$this->type = $type;
 		$this->int_type = $type == self::SUBDOMAIN ? 0 : 1;
 
@@ -75,12 +90,13 @@ class MzpoAmo
 			->setAccountBaseDomain($accessToken->getValues()['baseDomain'])
 			->onAccessTokenRefresh(
 				function (\League\OAuth2\Client\Token\AccessTokenInterface $accessToken, string $baseDomain) {
+					global $cl;
 					saveToken(
 						[
 							'accessToken' => $accessToken->getToken(),
 							'refreshToken' => $accessToken->getRefreshToken(),
 							'expires' => $accessToken->getExpires(),
-							'baseDomain' => $baseDomain,
+							'baseDomain' => $baseDomain
 						]
 					);
 				});

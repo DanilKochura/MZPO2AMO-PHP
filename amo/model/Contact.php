@@ -568,4 +568,9 @@ class Contact extends MzpoAmo
 
 		return $note;
 	}
+
+	public function getResponsibleUserId(): ?int
+	{
+		return $this->contact->getResponsibleUserId();
+	}
 }

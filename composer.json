@@ -5,6 +5,7 @@
         "php-amqplib/php-amqplib": "^3.4",
       "ext-curl": "*",
         "ext-json": "*",
-      "ext-zip": "*"
+      "ext-zip": "*",
+        "hflabs/dadata": "^22.3"
     }
 }

@@ -154,6 +154,7 @@ ___
 + [Pipelines](/amo/dict/Pipelines.php) - Идентификаторы всех воронок
 + [Statuses](/amo/dict/Statuses.php) - Идентификаторы статусов для воронок (основных, используемых)
 + [Tags](/amo/dict/Tags.php) - Идентификаторы тегов
++ [Users](/amo/dict/Users.php) - Идентификаторы пользователей
 ___
 
 ## Настройки

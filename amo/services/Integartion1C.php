@@ -20,9 +20,6 @@ use MzpoAmo\Leads;
 use MzpoAmo\Log;
 use MzpoAmo\MzpoAmo;
 
-/**
- * @method EditStudent_POST(Contact1C $client)
- */
 class Integartion1C
 {
 
@@ -41,44 +38,69 @@ class Integartion1C
 		if(!$contact)
 		{
 			$lead->setNoteSave('Не удалось перенести сделку: отсуствует контакт!');
-			Log::writeError(Log::LEAD, 'отсуствует контакт! в сделке');
+			Log::writeError(Log::C1, 'отсуствует контакт! в сделке');
 			throw new \Exception('отсуствует контакт в сделке');
 		}
+//		Log::write(Log::C1, $contact);
 
 
 		if($client = $contact->getCFValue(CustomFields::CLIENT_1C[$lead->getType()]))
 		{
-			$lead1c->client_id_1c = $client;
+			$lead1c->client_id_1C = $client;
 		} else
 		{
 			$client = Contact1C::fromAmo($contact);
+//			Log::write(Log::C1, $client);
+
 			$uid = $this->request->EditStudent_POST($client);
 			$contact->setCFStringValue(CustomFields::CLIENT_1C[$lead->getType()], $uid->client_id_1C);
 			$contact->save();
-			$lead1c->client_id_1c = $uid->client_id_1C;
+			$lead1c->client_id_1C = $uid->client_id_1C;
+//			Log::writeLine(Log::C1, 'here');
 
 		}
-		if(!$lead1c->is_corporate)
+		if($c = $lead->getCompany())
 		{
-			$lead1c->company_id_1c = $lead1c->client_id_1c;
-		} else
-		{
-			$company = new Company($lead->getCompany());
+			$company = new Company($c);
+			$lead1c->is_corporate = true;
 			if($contragent = $company->getCFValue(CustomFields::COMPANY_ID_1C[$lead->getType()]))
 			{
-				$lead1c->client_id_1c = $contragent;
+				$lead1c->company_id_1C = $contragent;
 			} else
 			{
 				$contragent = Company1C::fromAmo($company);
-				$uid = $this->request->EditPartner_POST($contragent);
-				$company->setCFStringValue(CustomFields::COMPANY_ID_1C[$lead->getType()], $uid->company_id_1C);
-				$company->save();
-				$lead1c->company_id_1c = $uid->company_id_1C;
+				try {
+						$uid = $this->request->EditPartner_POST($contragent);
+						$company->setCFStringValue(CustomFields::COMPANY_ID_1C[$lead->getType()], $uid->company_id_1C);
+						$company->save();
+						$lead1c->company_id_1C = $uid->company_id_1C;
+				} catch (Exception $e)
+				{
+					Log::writeError(Log::C1, $e);
+					$lead->newNote("Не удалось перенести компанию в 1С");
+				}
+
 			}
 		}
-		$uid = $this->request->EditApplication_POST($lead1c);
-		$lead->setCFStringValue(CustomFields::LEAD1C[$lead->getType()], $uid->lead_id_1C);
-		$lead->newNote('Сделка перенесеная в 1С: '.$uid->lead_id_1C);
+		else
+		{
+			$lead1c->company_id_1C = $lead1c->client_id_1C;
+			$lead1c->is_corporate = false;
+		}
+
+
+//		$lead1c->product_id_1C = 'ac84a29c-a7f3-11eb-8921-20040ffb909d';
+
+
+		try {
+			$uid = $this->request->EditApplication_POST($lead1c);
+			$lead->setCFStringValue(CustomFields::LEAD1C[$lead->getType()], $uid->lead_id_1C);
+			$lead->newNote('Сделка перенесена в 1С: '.$uid->lead_id_1C);
+		} catch (Exception $e)
+		{
+			Log::writeError(Log::C1, $e);
+			$lead->newNote("Не удалось перенести сделку в 1С");
+		}
 		$lead->save();
 
 

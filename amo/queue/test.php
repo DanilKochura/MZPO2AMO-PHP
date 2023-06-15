@@ -1,5 +1,8 @@
 <?php
 
+
+ini_set('display_errors', true);
+error_reporting(E_ALL);
 use AmoCRM\Exceptions\AmoCRMApiException;
 use Carbon\Carbon;
 use MzpoAmo\Contact;
@@ -50,30 +53,7 @@ try {
 
 	#region главный callback-бработчик
 	$callback = function ($msg){
-		$post = json_decode($msg->body, true);
 
-		$method = $post['method'];
-//		Log::writeLine(Log::WEBHOOKS, print_r($post, 1));
-//		Log::writeLine(Log::C1, print_r($post, 1));
-//		file_put_contents(__DIR__.'/0.txt', print_r($post, 1), FILE_APPEND);
-		#region Инициализация мероприятий
-		if ($method == 'physics_corp') {
-			#region обработка запроса
-			$id = $post['leads']['add'][0]['id'] ?: $post['leads']['status'][0]['id'];
-			$status = $post['leads']['add'][0]['status_id'];
-			$pipeline = $post['leads']['add'][0]['pipeline_id'];
-			if (!$id) {
-				Log::writeError(Log::WEBHOOKS, new Exception('No id!'));
-			}
-			#endregion
-
-			$lead = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id, [\AmoCRM\Models\LeadModel::CATALOG_ELEMENTS, \AmoCRM\Models\LeadModel::CONTACTS]);
-//			Log::write(Log::C1, $lead->getLead());
-
-			$c1 = new \services\Integartion1C();
-			$c1->sendLead($lead);
-
-		}
 		#endregion
 
 
@@ -95,3 +75,27 @@ try {
 
 	file_put_contents(__DIR__.'/cons1.txt', print_r($e, 1).PHP_EOL);
 }
+
+
+
+//$method = 'physics_corp';
+//
+//#region Инициализация мероприятий
+//if ($method == 'physics_corp') {
+//	#region обработка запроса
+//
+//	$id = '30824235';
+//	if (!$id) {
+//		Log::writeError(Log::WEBHOOKS, new Exception('No id!'));
+//	}
+//
+//	#endregion
+//
+//	$lead = new Leads([], MzpoAmo::SUBDOMAIN_CORP, $id, [\AmoCRM\Models\LeadModel::CATALOG_ELEMENTS, \AmoCRM\Models\LeadModel::CONTACTS]);
+////			Log::write(Log::C1, $lead->getLead());
+//	$c1 = new \services\Integartion1C();
+//	$c1->sendLead($lead);
+//
+//	}
+
+die('end');

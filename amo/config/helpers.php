@@ -26,10 +26,9 @@ function saveToken($accessToken)
 			'baseDomain' => $accessToken['baseDomain'],
 		];
 
-		file_put_contents(TOKEN_FILE, json_encode($data));
-		file_put_contents(__DIR__.'/010.txt', json_encode($data));
+		file_put_contents(__DIR__.'/010.txt', json_encode($data), FILE_APPEND);
 		$token = new TokenDb();
-		$token->saveToken($accessToken['accessToken'], $accessToken['refreshToken'], $accessToken['expires'], $accessToken['baseDomain']);
+		$token->saveToken($accessToken['accessToken'], $accessToken['refreshToken'], $accessToken['expires'], $accessToken['baseDomain'], '');
 	} else {
 		exit('Invalid access token ' . var_export($accessToken, true));
 	}

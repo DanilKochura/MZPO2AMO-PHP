@@ -23,4 +23,6 @@ interface Pipelines
 
 	public const TEST_CORP = 6300634; //тест (корп)
 	public const DOG = 5238031; //договорной (корп)
+
+	public const STUDY_DIST = 6706178; //Обучение (дистанционное)
 }

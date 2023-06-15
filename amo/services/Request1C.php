@@ -63,12 +63,8 @@ class Request1C
 			$head['body'] = json_encode($data);
 		}
 		file_put_contents(__DIR__.'/0.txt', json_encode($data), FILE_APPEND);
-		try {
-			return json_decode($this->client->request($type, $this->host.$method, $head)->getBody());
-		} catch (\Exception $e)
-		{
-			dd($e);
-		}
+		return json_decode($this->client->request($type, $this->host.$method, $head)->getBody());
+
 	}
 
 	public function __call($name, $arguments)

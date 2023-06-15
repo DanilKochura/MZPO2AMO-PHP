@@ -64,6 +64,7 @@ class Leads extends MzpoAmo
 				$this->lead = null;
 			} catch (Exception $e)
 			{
+				dd($e);
 				Log::writeError(Log::LEAD, print_r($e, 1));
 				die($e);
 			}
@@ -106,6 +107,8 @@ class Leads extends MzpoAmo
 		'event' => CustomFields::EVENT_NAME,
 		'clid' => CustomFields::ANALYTIC_ID,
 		'_ym_uid' => CustomFields::YM_UID,
+		'uid_gr' => CustomFields::UID_GROUP,
+		'course' => CustomFields::COURSE
 	];
 
 
@@ -113,7 +116,8 @@ class Leads extends MzpoAmo
 	private  const FORM_TAGS =
 		[
 			'партнеры' => Tags::PARTNERS,
-			'Выставка' => Tags::EXPOSITION
+			'Выставка' => Tags::EXPOSITION,
+			'mzpo-s.ru' => Tags::MZPO_S
 		];
 
 	/**
@@ -248,7 +252,6 @@ class Leads extends MzpoAmo
 	 */
 	public function customLeadFileds($POST) : CustomFieldsValuesCollection
 	{
-		Log::writeLine(Log::LEAD, 'fdf');
 		$fileds = new CustomFieldsValuesCollection();
 		$i = $this->type == self::SUBDOMAIN ? 0 : 1;
 		foreach ($this->post_to_amo as $post => $id)
@@ -660,6 +663,7 @@ class Leads extends MzpoAmo
 		$mzpoAmo = new MzpoAmo(MzpoAmo::SUBDOMAIN_CORP);
 	try {
 		#region сохранение
+
 		$newlead = $mzpoAmo->apiClient->leads()->addOne($leadCorp);
 		#endregion
 
