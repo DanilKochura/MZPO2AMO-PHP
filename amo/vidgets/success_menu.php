@@ -370,6 +370,19 @@ $coco = 0;
     </style>
 </head>
 <body>
+<form action="" method="get">
+    <div style="display: flex; justify-content: center; margin: 10px">
+        <div style="display: flex">
+            <div><div style="display: flex">
+                    <input type="date" name="date_from" required placeholder="Начало" value="<?=$_GET['date_from']?>">
+                    <input type="date" name="date_to"   required placeholder="Конец" value="<?=$_GET['date_to']?>"> </div>
+                <input type="checkbox" name="refresh" id="refresh" > <label for="refresh"> Обновить принудительно </label></div>
+            <input type="submit" value="Получить" style="margin-left: 10px">
+
+        </div>
+    </div>
+</form>
+
 <canvas id="densityChart" width="600" height="400" style="width: 600px; height: 600px"></canvas>
 <script>
 
