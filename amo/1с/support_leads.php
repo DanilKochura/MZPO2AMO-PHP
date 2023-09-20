@@ -7,6 +7,7 @@ use AmoCRM\Models\CustomFieldsValues\ValueCollections\DateCustomFieldValueCollec
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\SelectCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\DateTimeCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\SelectCustomFieldValueModel;
+use AmoCRM\Models\TagModel;
 use Carbon\Carbon;
 use MzpoAmo\Contact;
 use MzpoAmo\CustomFields;
@@ -42,14 +43,7 @@ require $_SERVER['DOCUMENT_ROOT'] .'/amo/reports/EventsReport.php';
 require $_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php';
 
 #region Словарь пользователей
-$resps = [
-	'Афанасьева Ксения' => Users::AFANASYYEVA,
-	'Платова Юлия' => Users::PLATOVA,
-	'Симкина Екатерина' => Users::SIMKINA,
-	'Федько Мария' => Users::FEDKO,
-	'Митрофанова Наталия' => Users::MITROFANOVA
 
-];
 #endregion
 
 #region Словарь организаций
@@ -73,8 +67,10 @@ if(!$_POST['lead_id'] or !$t->getLead()) {
 	$lead = [];
 	#region Парсинг запроса
 	$_POST['title'] = $_POST['group'] . ' ' . date('d.m', strtotime($_POST['date_start'])) . ' ' . explode(' ', $_POST['teacher'])[0];
-	$_POST['resp'] = $resps[$_POST['responsible_user']] ?: Users::PLATOVA;
-	#endregion
+    $userService  = new UserService();
+    $_POST['resp'] = $userService->getUser($_POST['responsible_user']) ?: Users::ADMIN;
+    $resp = $_POST['resp'];
+    #endregion
 
 	$lead = new \AmoCRM\Models\LeadModel();
 
@@ -156,12 +152,14 @@ if(!$_POST['lead_id'] or !$t->getLead()) {
 			->setFieldId(CustomFields::TYPE[0])
 			->setValues((new \AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection())
 				->add((new \AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel())->setValue($_POST['title']))));
-	$userService  = new UserService();
-	$resp = $userService->getUser($_POST['responsible_user']) ?: Users::PLATOVA;
+
 	$lead->setResponsibleUserId($resp);
 	$lead->setCustomFieldsValues($cfvs);
 	$pip = $_POST['responsible_user'] == 'Пищаева Екатерина' ? Pipelines::STUDY_DIST : Pipelines::STUDY_OCHNO;
 	$lead->setPipelineId($pip);
+    $lead->setTags((new \AmoCRM\Collections\TagsCollection())->add((new TagModel())
+        ->setName(Tags::C1_GROUP['name'])
+        ->setId(Tags::C1_GROUP['id'])));
 	#endregion
 	$lead = $mzpo->apiClient->leads()->addOne($lead);
 	file_put_contents(__DIR__.'/1.txt', print_r([$pip, $lead], 1), FILE_APPEND);
@@ -215,7 +213,7 @@ foreach ($_POST['students'] as $student)
 
 		if($res)
 		{
-			$res->setUpdatedBy(Users::PLATOVA);
+			$res->setUpdatedBy(Users::ADMIN);
 			$ar[] = $res;
 			$lc->add($res);
 			continue;
@@ -236,7 +234,7 @@ foreach ($_POST['students'] as $student)
 
 		if ($res)
 		{
-			$res->first()->setUpdatedBy(Users::PLATOVA);
+			$res->first()->setUpdatedBy(Users::ADMIN);
 
 			$ar[] = $res;
 			$lc->add($res->first());
@@ -258,7 +256,7 @@ foreach ($_POST['students'] as $student)
 	}
 	if($res)
 	{
-		$res->first()->setUpdatedBy(Users::PLATOVA);
+		$res->first()->setUpdatedBy(Users::ADMIN);
 
 		$ar[] = $res;
 		$lc->add($res->first());

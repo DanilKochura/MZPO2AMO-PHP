@@ -38,6 +38,7 @@ interface Tags
 	public const FB_OSNOVY_KOSMETOLOGII = [ 'id' => 304379,  'name' => "Fb_osnovy-kosmetologii" ];
 
 	public const RETAIL_LEAD = ['id' => 1212821, 'name' => 'Сделка из розницы'];
+	public const FAST_REG = ['id' => 373027, 'name' => 'Быстрая запись'];
 //	public const TEST = [ 'id' => 305051,  'name' => "Fb_probnii-urok" ];
 //	public const TEST = [ 'id' => 305053,  'name' => "Fb_probnii-urok-s-lepkoi" ];
 //	public const TEST = [ 'id' => 307873,  'name' => "Fb_reabilitolog" ];
@@ -230,4 +231,5 @@ interface Tags
 	public const TEST_2022 = [ 'id' => 348337,  'name' => "ТЕСТ-2022" ];
 	public const TEST_MARATHON2 = [ 'id' => 305749,  'name' => "тест-марафон" ];
 	public const TESTAMO = [ 'id' => 307111,  'name' => "тестамо" ];
+	public const C1_GROUP = [ 'id' => 375491,  'name' => "1с_группы" ];
 }
