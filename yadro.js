@@ -955,50 +955,162 @@ if (window.location.hostname == 'mirk.msk.ru' || window.location.hostname == 'ne
 		}
 
 		params['url_path'] = document.location.pathname + window.location.search;
+		//region Опознавание форм
 
-		if (btn_form_id === '13107901_form_3' || btn_form_id === '26046107_form_6' || btn_form_id === '25477507_form_3' || btn_form_id === '514615_form_9' || btn_form_id === '13107901_form_4' || btn_form_id === '25477507_form_5' || btn_form_id === '25477507_form_4') {
-			console.log(btn_form_id)
-			form_name = 'Обратный звонок';
-		} else if (btn_form_id === '14126701_form_1') {
-			form_name = 'Получите бесплатную консультацию по поводу обучения';
-		} else if (btn_form_id === '25490707_form_7') {
-			form_name = 'Напишите нам';
-		} else if (btn_form_id === '11517702_form_1' || btn_form_id === '58386505_form_5') {
-			form_name = 'Заказать звонок';
-		} else if (btn_form_id === 'shop2-order-options_form_1') {
-			form_name = 'Оставить отзыв';
-		} else if (btn_form_id === '13107701_form_4' || btn_form_id === '25477307_form_5') {
-			form_name = 'Быстрая запись на обучение';
-		} else if (btn_form_id === '16647101_form_1' || btn_form_id === '16647101_form_2' || btn_form_id === '25478307_form_5' || btn_form_id === '25478307_form_6' || btn_form_id === '25478907_form_2') {
-			form_name = 'Заказать консультацию специалиста';
-		} else if (btn_form_id === '11518502_form_3') {
-			form_name = 'Записаться на курс и мастер-класс по массажу';
-		} else if (btn_form_id === '16705301_form_3' || btn_form_id === '16705301_form_4') {
-			form_name = 'Обратная связь / нужна консультация';
-		} else if (btn_form_id === '11518102_form_3') {
-			form_name = 'Приведи друга';
-		} else if (btn_form_id === '685301_form_1') {
-			form_name = 'Вопросы про дистанционное обучение';
-		} else if (btn_form_id === '13107901_form_5') {
-			form_name = 'Обратный звонок';
-		} else if (btn_form_id === '24955501_form_5' || btn_form_id === '24955501_form_6' || btn_form_id === '25479307_form_6') {
-			form_name = 'Запись на обучение';
-		} else if (btn_form_id === '30324505_form_1') {
-			form_name = 'Отклик на вакансию';
-		} else if (btn_form_id === '58386305_form_5') {
-			form_name = 'Напишите нам';
-		} else if (btn_form_id === '8128707_form_4' || btn_form_id === '25474907_form_6') {
-			form_name = 'Записаться моделью';
-		} else if (btn_form_id === 'shop2-order-options_btn_1') {
-			form_name = 'Заявка из корзины';
-		} else if (btn_form_id === '14126501_form_5') {
-			form_name = 'Получить консультацию';
-		} else if (btn_form_id === '25473707_btn_1') {
-			form_name = 'записаться на мероприятие _X_';
-		} else {
-			form_name = '[form_name]';
+
+		/**
+		 * @param {string} form_name
+		 * @param {string[]} ids
+		 */
+		function Form(form_name, ids)
+		{
+			this.form_name = form_name
+			this.ids = ids
+			return this
+		}
+
+
+		/**
+		 * Массив всех форм на сайте (название для form_name_site и список возможных btn_form_id
+		 * @type {Form[]}
+		 */
+		let forms = [
+			new Form(
+				'Обратный звонок',
+				['13107901_form_[0-9]+', '26046107_form_[0-9]+', '25477507_form_[0-9]+', '514615_form_[0-9]+']),
+			new Form(
+				'Получите бесплатную консультацию по поводу обучения',
+				['14126701_form_[0-9]+', '25478507_form_[0-9]+', '14126501_form_[0-9]+']
+			),
+			new Form(
+				'Напишите нам',
+				['25490707_form_[0-9]+', '25490707_form_[0-9]+']
+			),
+			new Form(
+				'Заказать звонок',
+				['11517702_form_[0-9]+', '58386505_form_[0-9]+']
+			),
+			new Form(
+				'Оставить отзыв',
+				['shop2-order-options_form_1']
+			),
+			new Form(
+				'Быстрая запись на обучение',
+				['13107701_form_[0-9]+', '25477307_form_[0-9]+']
+			),
+			new Form(
+				'Заказать консультацию специалиста',
+				['16647101_form_[0-9]+', '25478907_form_[0-9]+', '25478307_form_[0-9]+']
+			),
+			new Form(
+				'Записаться на курс и мастер-класс по массажу',
+				['11518502_form_[0-9]+']
+			),
+			new Form(
+				'Обратная связь / нужна консультация',
+				['16705301_form_[0-9]+']
+			),
+			new Form(
+				'Приведи друга',
+				['11518102_form_[0-9]+']
+			),
+			new Form(
+				'Вопросы про дистанционное обучение',
+				['685301_form_[0-9]+']
+			),
+			new Form(
+				'Запись на обучение',
+				['24955501_form_5', '25479307_form_[0-9]+']
+			),
+			new Form(
+				'Отклик на вакансию',
+				['30324505_form_[0-9]+']
+			),
+			new Form(
+				'Напишите нам',
+				['58386305_form_[0-9]+']
+			),
+
+			new Form(
+				'Заявка из корзины'
+					['shop2-order-options_btn_1'],
+			),
+			new Form(
+				'записаться на мероприятие _X_',
+				['25473707_form_[0-9]+', '25473707_btn_[0-9]+']
+			),
+			new Form(
+				'Записаться моделью',
+				['8128707_form_[0-9]+', '25474907_form_[0-9]+']
+			),
+
+		]
+
+
+
+		form_name = '[form_name]'; // по умолчанию
+		for(i = 0; i < forms.length; i++)
+		{
+			// Проверяем все формы из массива, пока не найдем нужную. Поиск идет по регулярному выражению в массиве формы
+			form = forms[i]
+			var matches = form.ids.filter(function(pattern) {
+				return new RegExp(pattern).test(btn_form_id);
+			})
+			if(matches.length > 0)
+			{
+				form_name = form.form_name
+				break
+			}
+
 		}
 		console.log(form_name)
+		//endregion
+
+		//region Старый код для опознавания форм
+		// if (btn_form_id === '13107901_form_3' || btn_form_id === '26046107_form_6' || btn_form_id === '25477507_form_3' || btn_form_id === '514615_form_9' || btn_form_id === '13107901_form_4' || btn_form_id === '25477507_form_5' || btn_form_id === '25477507_form_4') {
+		// 	form_name = 'Обратный звонок';
+		// } else if (btn_form_id === '14126701_form_1' || btn_form_id === '25478507_form_1') {
+		// 	form_name = 'Получите бесплатную консультацию по поводу обучения';
+		// } else if (btn_form_id === '25490707_form_7' || btn_form_id === '25490707_form_8') {
+		// 	form_name = 'Напишите нам';
+		// } else if (btn_form_id === '11517702_form_1' || btn_form_id === '58386505_form_5') {
+		// 	form_name = 'Заказать звонок';
+		// } else if (btn_form_id === 'shop2-order-options_form_1') {
+		// 	form_name = 'Оставить отзыв';
+		// } else if (btn_form_id === '13107701_form_4' || btn_form_id === '25477307_form_5') {
+		// 	form_name = 'Быстрая запись на обучение';
+		// } else if (btn_form_id === '16647101_form_1' || btn_form_id === '16647101_form_2' || btn_form_id === '25478907_form_2' || btn_form_id === '25478307_form_5' || btn_form_id === '25478307_form_6' || btn_form_id === '25478907_form_2') {
+		// 	form_name = 'Заказать консультацию специалиста';
+		// } else if (btn_form_id === '11518502_form_3') {
+		// 	form_name = 'Записаться на курс и мастер-класс по массажу';
+		// } else if (btn_form_id === '16705301_form_3' || btn_form_id === '16705301_form_4') {
+		// 	form_name = 'Обратная связь / нужна консультация';
+		// } else if (btn_form_id === '11518102_form_3') {
+		// 	form_name = 'Приведи друга';
+		// } else if (btn_form_id === '685301_form_1') {
+		// 	form_name = 'Вопросы про дистанционное обучение';
+		// } else if (btn_form_id === '13107901_form_5') {
+		// 	form_name = 'Обратный звонок';
+		// } else if (btn_form_id === '24955501_form_5' || btn_form_id === '24955501_form_6' || btn_form_id === '25479307_form_6') {
+		// 	form_name = 'Запись на обучение';
+		// } else if (btn_form_id === '30324505_form_1') {
+		// 	form_name = 'Отклик на вакансию';
+		// } else if (btn_form_id === '58386305_form_5') {
+		// 	form_name = 'Напишите нам';
+		// } else if (btn_form_id === '8128707_form_4' || btn_form_id === '25474907_form_6') {
+		// 	form_name = 'Записаться моделью';
+		// } else if (btn_form_id === 'shop2-order-options_btn_1') {
+		// 	form_name = 'Заявка из корзины';
+		// } else if (btn_form_id === '14126501_form_5') {
+		// 	form_name = 'Получить консультацию';
+		// } else if (btn_form_id === '25473707_form_1' || btn_form_id === '25473707_btn_1') {
+		// 	form_name = 'записаться на мероприятие _X_';
+		// } else {
+		// 	form_name = '[form_name]';
+		// }
+		//endregion
+
+
 		finds = elm_form.getElementsByClassName('gr-head');
 		for (index = 0; index < finds.length; ++index) {
 			find = finds[index];
