@@ -45,8 +45,8 @@ class MzpoAmo
 
 	#region corp
 	public const SUBDOMAIN_CORP = 'mzpoeducation'; //Поддомен нужного аккаунта
-	protected const SECRET_CORP = 'PpfKPVKEoND3MBHh7fjLSQIcYBNaZetCmVkUXU9VMLI02ynoGJl1SJ4e4YStYust';
-	protected const ID_CORP = 'e48269b8-aca1-4ebd-8809-420d71f57522';
+	protected const SECRET_CORP = '5WwaUzKKGGm0JbHPVSEP0QISVRbHXWwtAgCU2Scaax5i5ZuaL0UPS6YL6OvyOBRk';
+	protected const ID_CORP = 'adfe4dba-a20c-4a3d-ab34-88a40369a0cc';
 	protected const REDIRECT_CORP = 'https://mzpo-s.ru/amo/mainhook.php';
 
 	#endregion
@@ -75,12 +75,7 @@ class MzpoAmo
 		}
 		elseif($type == self::SUBDOMAIN_CORP){
 			$this->apiClient = new AmoCRMApiClient($this::ID_CORP, self::SECRET_CORP, self::REDIRECT_CORP);
-			$cl = self::ID_CORP;
 		}
-//		else {
-//			$this->apiClient = new AmoCRMApiClient($this::ID_WID, $this::SECRET_WID, $this::REDIRECT_WID);
-//			$cl = self::ID_WID;
-//		}
 		$this->type = $type;
 		$this->int_type = $type == self::SUBDOMAIN ? 0 : 1;
 

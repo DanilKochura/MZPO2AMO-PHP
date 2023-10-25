@@ -3,6 +3,7 @@
 namespace services;
 
 use MzpoAmo\MzpoAmo;
+use MzpoAmo\Users;
 
 class UserService extends \MzpoAmo\MzpoAmo
 {
@@ -44,4 +45,12 @@ class UserService extends \MzpoAmo\MzpoAmo
 		}
 		return null;
 	}
+
+
+    public static function AcceptResponsibleChange($changer, $oldResp)
+    {
+        if($changer == $oldResp) return true;
+        if(in_array($changer, Users::ADMINS)) return  true;
+        return false;
+    }
 }

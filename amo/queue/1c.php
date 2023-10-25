@@ -51,7 +51,7 @@ try {
 	#region главный callback-бработчик
 	$callback = function ($msg){
 		$post = json_decode($msg->body, true);
-
+        file_put_contents(__DIR__.'/LLOGLOG.txt', print_r($post, 1), FILE_APPEND);
 		$method = $post['method'];
 //		Log::writeLine(Log::WEBHOOKS, print_r($post, 1));
 //		Log::writeLine(Log::C1, print_r($post, 1));
@@ -76,9 +76,17 @@ try {
 		}
 		#endregion
 
+        elseif ($method == 'savelead') {
+            $id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+            $lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
+            $lead->setNoteSave("Производится перевод сделки. Пожалуйста подождите.");
+            $is = new \services\Integartion1C();
+            $is->sendLead($lead);
+        }
 
 
 		$msg->ack();
+        die();
 	};
 	#endregion
 

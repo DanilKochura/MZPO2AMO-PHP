@@ -20,6 +20,9 @@ use MzpoAmo\Leads;
 use MzpoAmo\Log;
 use MzpoAmo\MzpoAmo;
 
+/**
+ * @method EditStudent_POST(Contact1C $client)
+ */
 class Integartion1C
 {
 
@@ -41,7 +44,6 @@ class Integartion1C
 			Log::writeError(Log::C1, 'отсуствует контакт! в сделке');
 			throw new \Exception('отсуствует контакт в сделке');
 		}
-//		Log::write(Log::C1, $contact);
 
 
 		if($client = $contact->getCFValue(CustomFields::CLIENT_1C[$lead->getType()]))
@@ -132,38 +134,15 @@ class Integartion1C
 	public function sendContact(Contact $contact)
 	{
 		#region Заполнение JSON-объекта
-		$json=[];
+        $client = Contact1C::fromAmo($contact);
+//			Log::write(Log::C1, $client);
 
-		if($json['dob'])
-		{
-			$json['dob'] = $json['dob']->toDateTimeString();
-		}
-		#endregion
+        $uid = $this->request->EditStudent_POST($client);
+        $contact->setCFStringValue(CustomFields::CLIENT_1C[$contact->getType()], $uid->client_id_1C);
+        $contact->save();
 
-		#region Отправка
-		try {
-			$r = $this->request->request('POST', 'EditStudent' , json_encode($json));
-			$body = json_decode($r->getBody(), 1);
-			$contact->setCFStringValue(CustomFields::CLIENT_1C[0], $body['client_id_1C']);
-			$contact->save();
-		} catch(Exception $e)
-		{
-			dd($e);
-		}
-		#endregion
 
-		#region Сохранение
-		try {
-			$contact->newNote('UID клиента в 1с: '.$body['client_id_1C']);
-			$contact->save();
-
-		} catch (AmoCRMApiErrorResponseException $e)
-		{
-			Log::writeError(Log::LEAD, $e->getValidationErrors());
-		}
-		#endregion
-
-		return $body['client_id_1C'];
+		return $uid->client_id_1C;
 	}
 
 	public function getContact($uid)
