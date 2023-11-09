@@ -1030,7 +1030,6 @@ if (window.location.hostname == 'mirk.msk.ru' || window.location.hostname == 'ne
 				'Напишите нам',
 				['58386305_form_[0-9]+']
 			),
-
 			new Form(
 				'Заявка из корзины'
 					['shop2-order-options_btn_1'],
@@ -1053,13 +1052,16 @@ if (window.location.hostname == 'mirk.msk.ru' || window.location.hostname == 'ne
 		{
 			// Проверяем все формы из массива, пока не найдем нужную. Поиск идет по регулярному выражению в массиве формы
 			form = forms[i]
-			var matches = form.ids.filter(function(pattern) {
-				return new RegExp(pattern).test(btn_form_id);
-			})
-			if(matches.length > 0)
+			if(form.ids !== undefined)
 			{
-				form_name = form.form_name
-				break
+				var matches = form.ids.filter(function(pattern) {
+					return new RegExp(pattern).test(btn_form_id);
+				})
+				if(matches.length > 0)
+				{
+					form_name = form.form_name
+					break
+				}
 			}
 
 		}

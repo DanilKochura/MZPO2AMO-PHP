@@ -10,6 +10,7 @@ use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Filters\ContactsFilter;
 use AmoCRM\Filters\NotesFilter;
 use AmoCRM\Helpers\EntityTypesInterface;
+use AmoCRM\Models\CompanyModel;
 use AmoCRM\Models\ContactModel;
 use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
@@ -276,6 +277,9 @@ class Contact extends MzpoAmo
 	 */
 	public function checkLeads(): ?int
 	{
+        $disabled_pips = [
+            3338257
+        ];
 		try{
 			$id = null;
 			$contacts = $this->apiClient->contacts()->getOne($this->contact->getId(),[ContactModel::LEADS]);
@@ -285,7 +289,7 @@ class Contact extends MzpoAmo
 				foreach($leads as $item)
 				{
 					$lead = $this->apiClient->leads()->getOne($item->id);
-					if($lead->getStatusId() == 142 or $lead->getStatusId()==143 or ($lead->getPipelineId() != $this->final and $lead->getPipelineId() != Pipelines::TEST_DANIL))
+					if($lead->getStatusId() == 142 or $lead->getStatusId()==143 or ($lead->getPipelineId() != $this->final and ($lead->getPipelineId() != Pipelines::TEST_DANIL and $lead->getStatusId() == 58522914)) or in_array($lead->getPipelineId(),$disabled_pips ) )
 					{
 						continue;
 					}
@@ -509,8 +513,8 @@ class Contact extends MzpoAmo
 	}
 
 
-	public function setCFStringValue($id, $value) : bool
-	{
+	public function setCFStringValue($id, $value) : Contact
+    {
 		try {
 			$cfvs = $this->contact->getCustomFieldsValues();
 
@@ -527,11 +531,11 @@ class Contact extends MzpoAmo
 						)
 				);
 			$this->contact->setCustomFieldsValues($cfvs);
-			return true;
+			return $this;
 		}catch (AmoCRMApiException $e)
 		{
 			Log::writeError(Log::LEAD, $e);
-			return false;
+			return $this;
 		}
 
 	}
@@ -569,8 +573,21 @@ class Contact extends MzpoAmo
 		return $note;
 	}
 
+
+    public function setCompany(CompanyModel $company): Contact
+    {
+        $this->contact->setCompany($company);
+        return $this;
+    }
 	public function getResponsibleUserId(): ?int
 	{
 		return $this->contact->getResponsibleUserId();
 	}
+
+
+    public function setResponsibleUser($id): Contact
+    {
+        $this->contact->setResponsibleUserId($id);
+        return $this;
+    }
 }
