@@ -14,6 +14,7 @@ public const BULIGIN = 9823318;
 	public const ALFEROVA_CORP = 2375131;
 
     public const KOCHURA_CORP = 9081002;
+    public const ADMIN_CORP = 2375146;
 
 	public const PLATOVA = 8366488;
 
@@ -48,10 +49,12 @@ public const BULIGIN = 9823318;
         [
             self::KIREEVA,
             self::ALFEROVA,
-            self::FEDOSOVA,
+//            self::FEDOSOVA,
             self::ULYASHEVA,
             self::VESELOVA
         ];
 
-
+        public const FOR_UPDATES = [
+            MzpoAmo::SUBDOMAIN => self::ADMIN, MzpoAmo::SUBDOMAIN_CORP => self::ADMIN_CORP
+        ];
 }

@@ -45,7 +45,7 @@ class CoursesServise extends MzpoAmo
 		while(1) {
 			$catalog_elements['delete'] = [];
 			foreach ($courses as $course) {
-				if ($course->getCustomFieldsValues()->getBy('fieldId', CustomFields::COURSE_UID_1c[$this->type])->getValues()->first()->getValue() == $uid) {
+				if ($course->getCustomFieldsValues()->getBy('fieldId', CustomFields::COURSE_UID_1c[$this->getType()])->getValues()->first()->getValue() == $uid) {
 					$catalog_elements['delete'][] = $course->getId();
 				}
 			}
