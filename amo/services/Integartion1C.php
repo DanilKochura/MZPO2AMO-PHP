@@ -36,12 +36,11 @@ class Integartion1C
 	public function sendLead(Leads $lead)
 	{
 		$lead1c = Lead1C::fromAMO($lead);
-
 		$contact = new Contact([], $lead->getSubdomain(), $lead->getContact());
 		if(!$contact)
 		{
 			$lead->setNoteSave('Не удалось перенести сделку: отсуствует контакт!');
-			Log::writeError(Log::C1, 'отсуствует контакт! в сделке');
+			Log::writeError(Log::C1, 'отсуствует контакт в сделке');
 			throw new \Exception('отсуствует контакт в сделке');
 		}
 
@@ -53,7 +52,6 @@ class Integartion1C
 		{
 			$client = Contact1C::fromAmo($contact);
 //			Log::write(Log::C1, $client);
-
 			$uid = $this->request->EditStudent_POST($client);
 			$contact->setCFStringValue(CustomFields::CLIENT_1C[$lead->getType()], $uid->client_id_1C);
 			$contact->save();
@@ -97,6 +95,7 @@ class Integartion1C
 		try {
 			$uid = $this->request->EditApplication_POST($lead1c);
 			$lead->setCFStringValue(CustomFields::LEAD1C[$lead->getType()], $uid->lead_id_1C);
+            $lead->setCreatedBy($lead->getResponsible());
 			$lead->newNote('Сделка перенесена в 1С: '.$uid->lead_id_1C);
 		} catch (Exception $e)
 		{

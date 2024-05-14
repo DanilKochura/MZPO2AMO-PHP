@@ -20,7 +20,7 @@ class Lead1C implements Base1CInterface
 		public ?string $organization;
 		public ?float $price;
 		public bool $is_corporate;
-		public string $lead_status = 'ВРАботе';
+		public string $lead_status = 'ВРаботе';
 		public ?string $marketing_channel;
 		public ?string $marketing_source;
 
@@ -61,9 +61,9 @@ class Lead1C implements Base1CInterface
 				$catalogElements = $lead->getCatalogElements();
 				if(!$catalogElements)
 				{
-					$lead->setNoteSave('Не удалось перенести сделку: отсуствуют товары!');
-					Log::writeError(Log::LEAD, 'Отстутствуют товары в сделке');
-					throw new \Exception('Отсутвтуют товары в сделке');
+					$lead->setNoteSave('Не удалось перенести сделку: отсутствуют товары!');
+					Log::writeError(Log::LEAD, 'Отсутствуют товары в сделке');
+					throw new \Exception('Отсутствуют товары в сделке');
 				}
 			}
 			//endregion
@@ -77,7 +77,10 @@ class Lead1C implements Base1CInterface
 			if((isset($lead1c->organization) and $lead1c->organization == 'МЦПО') or !isset($lead1c->organization))
 			{
 				$lead1c->organization = 'НОЧУ ДПО МЦПО';
+//				$lead1c->organization = 'МЦПО';
 			}
+
+//            $lead1c->organization = CustomFields::ORGANIZATIONS[$lead1c->organization];
 
 			$lead1c->price = $lead->getPrice();
 

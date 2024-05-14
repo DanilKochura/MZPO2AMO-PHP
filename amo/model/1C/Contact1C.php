@@ -16,7 +16,7 @@ class Contact1C implements Base1CInterface
 
 	public ?int $pass_serie;
 	public ?int $pass_number;
-	public ?int $pass_dpt_code;
+	public ?string $pass_dpt_code;
 	public ?string $pass_issued_by;
 	public  $pass_issued_at;
 	public ?string $pass_dpt;

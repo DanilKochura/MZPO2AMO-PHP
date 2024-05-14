@@ -27,7 +27,7 @@ use Exception;
 
 class Contact extends MzpoAmo
 {
-	private ContactModel $contact;
+	public ContactModel $contact;
 	private bool $new = false;
 	public string $name;
 	public string $phone;
@@ -333,6 +333,32 @@ class Contact extends MzpoAmo
 		}
 	}
 
+
+
+    /**
+     * Получение почты из карточки
+     * @return array|bool|int|object|string|null
+     */
+    public function getEmail()
+    {
+        try {
+            $phoneField = $this->contact->getCustomFieldsValues();
+            if(!$phoneField)
+            {
+                throw new Exception();
+            }
+            if(!$phoneField->getBy('fieldCode','EMAIL'))
+            {
+                throw new Exception();
+            }
+            return $this->contact->getCustomFieldsValues()->getBy('fieldCode', 'EMAIL')->getValues()->first()->getValue();
+        } catch (Exception $e)
+        {
+            return null;
+        }
+    }
+
+
 	/**
 	 * Установка телефона
 	 * @param $phone
@@ -427,8 +453,8 @@ class Contact extends MzpoAmo
 					}
 					$n->setEntityId($contactCorp->getContact()->getId());
 					$n->setResponsibleUserId(Leads::getCorpResponsible($contactCorp->getContact()->getResponsibleUserId()));
-					$n->setCreatedBy(9081002);
-					$n->setUpdatedBy(9081002);
+					$n->setCreatedBy(Users::ADMIN_CORP);
+					$n->setUpdatedBy(Users::ADMIN_CORP);
 					if(!$n->callStatus)
 					{
 							$n->callStatus = 4;
@@ -492,12 +518,12 @@ class Contact extends MzpoAmo
 
 
 
-	public function setCreatedByCorp($id=9081002)
+	public function setCreatedByCorp($id=Users::ADMIN_CORP)
 	{
 		$this->contact->setCreatedBy($id);
 	}
 
-	public function setUpdatedByCorp($id=9081002)
+	public function setUpdatedByCorp($id=Users::ADMIN_CORP)
 	{
 		$this->contact->setUpdatedBy($id);
 	}

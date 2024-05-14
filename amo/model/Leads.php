@@ -6,6 +6,7 @@ use AmoCRM\Collections\CustomFieldsValuesCollection;
 use AmoCRM\Collections\LinksCollection;
 use AmoCRM\Collections\NotesCollection;
 use AmoCRM\Collections\TagsCollection;
+use AmoCRM\Collections\TasksCollection;
 use AmoCRM\Exceptions\AmoCRMApiErrorResponseException;
 use AmoCRM\Exceptions\AmoCRMApiException;
 use AmoCRM\Exceptions\AmoCRMApiNoContentException;
@@ -18,16 +19,19 @@ use AmoCRM\Helpers\EntityTypesInterface;
 use AmoCRM\Models\ContactModel;
 use AmoCRM\Models\CustomFields\DateTimeCustomFieldModel;
 use AmoCRM\Models\CustomFields\SelectCustomFieldModel;
+use AmoCRM\Models\CustomFieldsValues\CheckboxCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\DateTimeCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\MultitextCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\NumericCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\SelectCustomFieldValuesModel;
 use AmoCRM\Models\CustomFieldsValues\TextCustomFieldValuesModel;
+use AmoCRM\Models\CustomFieldsValues\ValueCollections\CheckboxCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\DateCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\MultitextCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\NumericCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\SelectCustomFieldValueCollection;
 use AmoCRM\Models\CustomFieldsValues\ValueCollections\TextCustomFieldValueCollection;
+use AmoCRM\Models\CustomFieldsValues\ValueModels\CheckboxCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\DateTimeCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\MultitextCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\NumericCustomFieldValueModel;
@@ -39,6 +43,7 @@ use AmoCRM\Models\NoteModel;
 use AmoCRM\Models\NoteType\CommonNote;
 use AmoCRM\Models\NoteType\ServiceMessageNote;
 use AmoCRM\Models\TagModel;
+use AmoCRM\Models\TaskModel;
 use AmoCRM\OAuth2\Client\Provider\AmoCRMException;
 use Exception;
 use MzpoAmo\CustomFields;
@@ -71,7 +76,7 @@ class Leads extends MzpoAmo
 				Log::writeError(Log::LEAD, print_r($e, 1));
 				die($e);
 			}
-            if($post['1c_api_group'])
+            if(isset($post['1c_api_group']))
             {
                 $this->lead->setCustomFieldsValues($this->customLeadFileds($post));
                 $this->setCFSelectValue(CustomFields::OFICIAL_NAME[$this->getType()], $post['organization']);
@@ -376,6 +381,33 @@ class Leads extends MzpoAmo
     }
 
 
+    public function setCFFlagValue($id, $value)
+    {
+        try {
+            $cfvs = $this->lead->getCustomFieldsValues() ?: new CustomFieldsValuesCollection();
+
+            $cfvs
+                ->add(
+                    (new CheckboxCustomFieldValuesModel())
+                        ->setFieldId($id)
+                        ->setValues(
+                            (new CheckboxCustomFieldValueCollection())
+                                ->add(
+                                    (new CheckboxCustomFieldValueModel())
+                                        ->setValue($value)
+                                )
+                        )
+                );
+            $this->lead->setCustomFieldsValues($cfvs);
+            return true;
+        }catch (AmoCRMApiException $e)
+        {
+            Log::writeError(Log::LEAD, $e);
+            return false;
+        }
+    }
+
+
 	/**
 	 * Заполнение одного поля заявки по его id
 	 * @param $id
@@ -638,9 +670,26 @@ class Leads extends MzpoAmo
 //			return 2375131;
 //		}
 //		else return 2375131;
-		$USERS = [\MzpoAmo\Users::ULYASHEVA, \MzpoAmo\Users::VESELOVA];
+//		$USERS = [\MzpoAmo\Users::ULYASHEVA, \MzpoAmo\Users::VESELOVA];
 
-		return  $USERS[array_rand([\MzpoAmo\Users::ULYASHEVA, \MzpoAmo\Users::VESELOVA], 1)];
+        $last = file_get_contents(__DIR__.'/delegator.txt');
+
+
+        if($last == 0)
+        {
+            file_put_contents(__DIR__.'/delegator.txt', 1);
+            return Users::ULYASHEVA;
+        } elseif($last == 1)
+        {
+            file_put_contents(__DIR__.'/delegator.txt', 2);
+            return Users::KIREEVA;
+        }else
+        {
+            file_put_contents(__DIR__.'/delegator.txt', 0);
+            return Users::ALFEROVA_CORP;
+        }
+
+
 
 	}
 
@@ -889,6 +938,30 @@ class Leads extends MzpoAmo
 	}
 
 
+    public function getCatalogPrefix(): array
+    {
+        $catalogLinks =  $this->lead->getCatalogElementsLinks();
+        if(!$catalogLinks)
+        {
+            $this->lead = $this->apiClient->leads()->syncOne($this->lead, [LeadModel::CATALOG_ELEMENTS]);
+            $catalogLinks =  $this->lead->getCatalogElementsLinks();
+        }
+        $catalogElements = [];
+        if(!$catalogLinks)
+        {
+            return [];
+        }
+        foreach ($catalogLinks as $l)
+        {
+            $el = $this->apiClient->catalogElements(CustomFields::CATALOG[$this->getType()])->getOne($l->getId());
+            $arr = [];
+            $arr['prefix'] = $el->getCustomFieldsValues()->getBy('fieldId',CustomFields::SKU[$this->getType()] )->getValues()->first()->getValue();
+            $catalogElements[] = $arr;
+        }
+        return $catalogElements;
+    }
+
+
 	public function isCorp()
 	{
 		if($this->type == MzpoAmo::SUBDOMAIN)
@@ -914,4 +987,38 @@ class Leads extends MzpoAmo
 			Log::writeError(Log::LEAD, $e);
 		}
 	}
+
+    public function setCreatedBy($user)
+    {
+        $this->lead->setCreatedBy($user);
+        return $this;
+    }
+
+
+    public function addTask(TaskModel $task)
+    {
+        $tasksCollection = new TasksCollection();
+        $task->setEntityType(EntityTypesInterface::LEADS)
+            ->setEntityId($this->lead->getId());
+        $tasksCollection->add($task);
+
+        $tasksService = $this->apiClient->tasks();
+        try {
+            $tasksCollection = $tasksService->add($tasksCollection);
+        } catch (AmoCRMApiException $e) {
+        }
+        return $this;
+    }
+
+
+    public function addAdminCheckTask()
+    {
+        $task = new TaskModel();
+        $task->setTaskTypeId(2213389)
+            ->setText("Ошибка при переносе в 1с")
+            ->setCompleteTill(strtotime('tomorrow noon'))
+            ->setResponsibleUserId(\MzpoAmo\Users::KOCHURA);
+        $this->addTask($task);
+        return $this;
+    }
 }

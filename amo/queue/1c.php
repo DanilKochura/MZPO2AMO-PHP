@@ -77,12 +77,57 @@ try {
 		#endregion
 
         elseif ($method == 'savelead') {
-            $id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
-            $lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
-            $lead->setNoteSave("Производится перевод сделки. Пожалуйста подождите.");
-            $is = new \services\Integartion1C();
-            $is->sendLead($lead);
+            try {
+                $id = $post['leads']['add'][0]['id'] ?: ( $post['leads']['update'][0]['id'] ?: $post['leads']['status'][0]['id']);
+                $lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
+                $lead->setNoteSave("Производится перевод сделки. Пожалуйста подождите.");
+                $is = new \services\Integartion1C();
+                $is->sendLead($lead);
+            } catch (Exception $e)
+            {
+                file_put_contents(__DIR__.'/errors.txt', print_r($e, 1), FILE_APPEND);
+                $msg->ack();
+                $lead->setNoteSave("Произошла ошибка");
+                $lead->addAdminCheckTask();
+                die();
+
+//                throw $e;
+            }
         }
+
+        elseif ($method == 'change_resp') {
+            $id = $post['id'];
+            $uid = $post['uid'];
+            $resp = $post['resp'];
+            file_put_contents(__DIR__.'/positduid.txt', print_r([$id, $uid, $resp], 1), FILE_APPEND);
+            try {
+                $lead = new Leads([], MzpoAmo::SUBDOMAIN, $id);
+                $lead->setNoteSave("Производится смена ответственного в 1с. Пожалуйста подождите.");
+                $req = new \services\Request1C();
+
+                file_put_contents(__DIR__.'/log.json', json_encode(['data' => [ 'contract' => [
+                    'action' => 'changeotv',
+                    'contract_uid' => $uid,
+                    'otv' => $resp
+                ]]]));
+
+                $data = $req->request('POST', 'lk_editdata', ['data' => [ 'contract' => [
+                    'action' => 'changeotv',
+                    'contract_uid' => $uid,
+                    'otv' => $resp
+                ]]]);
+                $lead->setNoteSave("Ответственный в сделке успешно изменен!");
+                file_put_contents(__DIR__.'/data.txt', print_r($data, 1), FILE_APPEND);
+            } catch (Exception $e)
+            {
+                $lead->setNoteSave("Произошла ошибка");
+                $lead->addAdminCheckTask();
+                file_put_contents(__DIR__.'/errors.txt', print_r($e, 1), FILE_APPEND);
+                $msg->ack();
+                die();
+            }
+        }
+
 
 
 		$msg->ack();
